@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Login</title>
+    <style>
+        /* Basic styling to make the page user-friendly */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        input, button {
+            margin: 10px 0;
+            padding: 8px;
+            width: 300px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Login to Your Account</h2>
+        
+        <!-- Login form -->
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            // Login logic will go here
+            e.preventDefault();
+        });
+
+        // Add any additional security measures (e.g., session management, CSRF protection)
+    </script>
+</body>
+</html>
