@@ -1446,7 +1446,7 @@ Ready for your next cybersecurity challenge?`,
   const handleScroll = () => {
     if (!scrollRef.current) return;
     const { scrollTop, clientHeight, scrollHeight } = scrollRef.current;
-    const atBottom = scrollTop + clientHeight >= scrollHeight - 100; // tolerance
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 10; // tolerance
     setIsUserAtBottom(atBottom);
   };
 
