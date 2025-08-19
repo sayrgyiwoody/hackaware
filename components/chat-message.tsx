@@ -27,10 +27,10 @@ export function ChatMessage({ message, onRegenerate, onEdit }: ChatMessageProps)
   }
   
   return (
-    <div className={`group py-4 px-4 ${isBot ? "bg-transparent" : "bg-transparent"}`}>
+    <div className={`group py-4 lg:px-4 ${isBot ? "bg-transparent" : "bg-transparent"}`}>
       <div className={`max-w-4xl mx-auto flex gap-4 ${isBot ? "" : "flex-row-reverse"}`}>
         <div className="flex-shrink-0">
-          <Avatar className="h-8 w-8 border border-gray-700">
+          <Avatar className="h-8 w-8 border border-gray-700 hidden lg:block">
             <AvatarFallback className={isBot ? "bg-cyan-500/20 text-cyan-500" : "bg-blue-500/20 text-blue-500"}>
               {isBot ? <Shield className="h-4 w-4" /> : <User className="h-4 w-4" />}
             </AvatarFallback>

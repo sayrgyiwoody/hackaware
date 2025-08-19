@@ -1543,7 +1543,7 @@ Ready for your next cybersecurity challenge?`,
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto scrollbar-none p-4 space-y-4 min-h-0 container mx-auto max-w-5xl"
+          className="flex-1 overflow-y-auto scrollbar-none lg:p-4 space-y-4 min-h-0 container mx-auto max-w-5xl"
         >
           {messages.map((message) => (
             <div key={message.id}>
@@ -1670,7 +1670,7 @@ Ready for your next cybersecurity challenge?`,
         </div>
 
         {/* Fixed input area */}
-        <div className="w-full max-w-4xl mx-auto p-4 border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 rounded-xl mb-4">
+        <div className="w-full max-w-4xl p-4 border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 lg:rounded-xl mx-auto lg:mb-4">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
@@ -1713,7 +1713,7 @@ Ready for your next cybersecurity challenge?`,
                       }
                     }}
                     rows={1}
-                    placeholder="Ask about web security, vulnerabilities, best practices... (start typing for suggestions)"
+                    placeholder="Ask about web security, vulnerabilities, best practices..."
                     className="min-h-[60px] bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500 overflow-hidden resize-none"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
