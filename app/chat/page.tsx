@@ -1511,7 +1511,7 @@ Ready for your next cybersecurity challenge?`,
               </Button>
               <div className="flex items-center">
                 <Shield className="h-5 w-5 text-cyan-500 mr-2" />
-                <span className="font-bold">HackAware Security Chat</span>
+                <span className="font-bold">HackAware </span> <span className="hidden lg:inline-block ms-1"> Security Chat</span>
               </div>
             </Link>
             <div className="flex items-center gap-2">
