@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { Shield, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -21,26 +23,50 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const newErrors: Record<string, string> = {}
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const newErrors: Record<string, string> = {};
 
-    if (!formData.email.trim()) newErrors.email = "Email is required"
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format"
-    if (!formData.password) newErrors.password = "Password is required"
+  if (!formData.email.trim()) newErrors.email = "Email is required";
+  else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format";
+  if (!formData.password) newErrors.password = "Password is required";
 
-    setErrors(newErrors)
+  setErrors(newErrors);
+  if (Object.keys(newErrors).length > 0) return;
 
-    if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true)
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      setIsLoading(false)
-      // Redirect to chat
-      window.location.href = "/chat"
+  try {
+    setIsLoading(true);
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+    };
+
+    const res = await fetch(`${API_URL}/users/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      credentials: "include", // 👈 send HttpOnly cookie
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      console.error(errData);
+      throw new Error("Login failed");
     }
-  }
 
+    // JWT is now in HttpOnly cookie
+    router.push("/chat");
+  } catch (err) {
+    console.error(err);
+    alert("Login failed");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+    
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
       <header className="border-b border-gray-800 p-4">

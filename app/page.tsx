@@ -1,11 +1,32 @@
+"use client";
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Shield, MessageSquare, BookOpen, ChevronRight, Globe } from "lucide-react"
 import { HeroSection } from "@/components/hero-section"
 import { FeatureCard } from "@/components/feature-card"
 import { PrivacyModal } from "@/components/privacy-modal"
+import { useEffect, useState } from "react"
 
 export default function Home() {
+
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const res = await fetch("/api/me", {
+        credentials: "include", //  send cookies
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
       <header className="container mx-auto py-6 px-4 flex justify-between items-center">

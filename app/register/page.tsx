@@ -1,17 +1,24 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
+import { useRouter } from "next/navigation";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Shield,
   ArrowLeft,
@@ -25,51 +32,55 @@ import {
   Zap,
   CheckCircle,
   Star,
-} from "lucide-react"
-import Link from "next/link"
+} from "lucide-react";
+import Link from "next/link";
 
 type UserInterest = {
-  id: string
-  label: string
-  description: string
-  icon: React.ReactNode
-  category: "security" | "development" | "privacy" | "learning"
-}
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  category: "security" | "development" | "privacy" | "learning";
+};
 
 type ExpertiseLevel = {
-  id: string
-  label: string
-  description: string
-  requirements: string[]
-  color: string
-}
+  id: string;
+  label: string;
+  description: string;
+  requirements: string[];
+  color: string;
+};
 
 const userInterests: UserInterest[] = [
   {
     id: "web-security",
     label: "Web Application Security",
-    description: "Learn about XSS, SQL injection, CSRF, and other web vulnerabilities",
+    description:
+      "Learn about XSS, SQL injection, CSRF, and other web vulnerabilities",
     icon: <Shield className="h-5 w-5" />,
     category: "security",
   },
   {
     id: "privacy-protection",
     label: "Privacy & Data Protection",
-    description: "Understanding GDPR, data tracking, and privacy-preserving technologies",
+    description:
+      "Understanding GDPR, data tracking, and privacy-preserving technologies",
     icon: <Eye className="h-5 w-5" />,
     category: "privacy",
   },
   {
     id: "secure-coding",
     label: "Secure Coding Practices",
-    description: "Writing secure code and avoiding common programming vulnerabilities",
+    description:
+      "Writing secure code and avoiding common programming vulnerabilities",
     icon: <Code className="h-5 w-5" />,
     category: "development",
   },
   {
     id: "network-security",
     label: "Network Security",
-    description: "Firewalls, VPNs, network protocols, and infrastructure security",
+    description:
+      "Firewalls, VPNs, network protocols, and infrastructure security",
     icon: <Globe className="h-5 w-5" />,
     category: "security",
   },
@@ -97,11 +108,12 @@ const userInterests: UserInterest[] = [
   {
     id: "compliance-regulations",
     label: "Compliance & Regulations",
-    description: "Understanding security standards, audits, and regulatory requirements",
+    description:
+      "Understanding security standards, audits, and regulatory requirements",
     icon: <CheckCircle className="h-5 w-5" />,
     category: "learning",
   },
-]
+];
 
 const expertiseLevels: ExpertiseLevel[] = [
   {
@@ -148,10 +160,12 @@ const expertiseLevels: ExpertiseLevel[] = [
     ],
     color: "bg-amber-500/20 border-amber-500/30 text-amber-400",
   },
-]
+];
 
 export default function RegisterPage() {
-  const [currentStep, setCurrentStep] = useState(1)
+  const router = useRouter();
+
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
     fullName: "",
@@ -166,47 +180,53 @@ export default function RegisterPage() {
     goals: "",
     learningPreference: "",
     notifications: true,
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const totalSteps = 4
-  const progress = (currentStep / totalSteps) * 100
+  const totalSteps = 4;
+  const progress = (currentStep / totalSteps) * 100;
 
   const validateStep = (step: number): boolean => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     switch (step) {
       case 1:
-        if (!formData.fullName.trim()) newErrors.fullName = "Full name is required"
-        if (!formData.email.trim()) newErrors.email = "Email is required"
-        else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format"
-        if (!formData.password) newErrors.password = "Password is required"
-        else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters"
-        if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords don't match"
-        break
+        if (!formData.fullName.trim())
+          newErrors.fullName = "Full name is required";
+        if (!formData.email.trim()) newErrors.email = "Email is required";
+        else if (!/\S+@\S+\.\S+/.test(formData.email))
+          newErrors.email = "Invalid email format";
+        if (!formData.password) newErrors.password = "Password is required";
+        else if (formData.password.length < 8)
+          newErrors.password = "Password must be at least 8 characters";
+        if (formData.password !== formData.confirmPassword)
+          newErrors.confirmPassword = "Passwords don't match";
+        break;
       case 2:
-        if (formData.selectedInterests.length === 0) newErrors.interests = "Please select at least one interest"
-        break
+        if (formData.selectedInterests.length === 0)
+          newErrors.interests = "Please select at least one interest";
+        break;
       case 3:
-        if (!formData.expertiseLevel) newErrors.expertiseLevel = "Please select your expertise level"
-        break
+        if (!formData.expertiseLevel)
+          newErrors.expertiseLevel = "Please select your expertise level";
+        break;
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const handlePrevious = () => {
-    setCurrentStep(currentStep - 1)
-    setErrors({})
-  }
+    setCurrentStep(currentStep - 1);
+    setErrors({});
+  };
 
   const handleInterestToggle = (interestId: string) => {
     setFormData((prev) => ({
@@ -214,30 +234,53 @@ export default function RegisterPage() {
       selectedInterests: prev.selectedInterests.includes(interestId)
         ? prev.selectedInterests.filter((id) => id !== interestId)
         : [...prev.selectedInterests, interestId],
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = async () => {
-    if (!validateStep(currentStep)) return
+    if (!validateStep(currentStep)) return;
+    setIsSubmitting(true);
 
-    setIsSubmitting(true)
+    try {
+      const payload = {
+        username: formData.fullName,
+        email: formData.email,
+        expertise: formData.expertiseLevel,
+        learning_style: formData.learningPreference,
+        password: formData.password,
+      };
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-    // In a real app, you would send this data to your backend
-    console.log("Registration data:", formData)
+      console.log("Submitting registration:", payload);
 
-    setIsSubmitting(false)
-    // Redirect to success page or login
-    window.location.href = "/chat"
-  }
+      const res = await fetch(`${API_URL}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include", // VERY IMPORTANT to receive HttpOnly cookie
+      });
+
+      if (!res.ok) throw new Error("Registration failed");
+
+      // JWT is already stored in HttpOnly cookie (safe)
+
+      router.push("/chat");
+    } catch (err) {
+      console.error(err);
+      alert("Registration failed");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const getInterestsByCategory = (category: string) => {
-    return userInterests.filter((interest) => interest.category === category)
-  }
+    return userInterests.filter((interest) => interest.category === category);
+  };
 
-  const selectedExpertise = expertiseLevels.find((level) => level.id === formData.expertiseLevel)
+  const selectedExpertise = expertiseLevels.find(
+    (level) => level.id === formData.expertiseLevel
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
@@ -280,7 +323,9 @@ export default function RegisterPage() {
                 <User className="h-5 w-5 text-cyan-500" />
                 Basic Information
               </CardTitle>
-              <CardDescription>Let's start with your basic details</CardDescription>
+              <CardDescription>
+                Let's start with your basic details
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -289,11 +334,15 @@ export default function RegisterPage() {
                   <Input
                     id="fullName"
                     value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fullName: e.target.value })
+                    }
                     placeholder="Enter your full name"
                     className="bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
                   />
-                  {errors.fullName && <p className="text-sm text-red-400">{errors.fullName}</p>}
+                  {errors.fullName && (
+                    <p className="text-sm text-red-400">{errors.fullName}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -302,11 +351,15 @@ export default function RegisterPage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="Enter your email"
                     className="bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
                   />
-                  {errors.email && <p className="text-sm text-red-400">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="text-sm text-red-400">{errors.email}</p>
+                  )}
                 </div>
               </div>
 
@@ -317,11 +370,15 @@ export default function RegisterPage() {
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
                     placeholder="Create a strong password"
                     className="bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
                   />
-                  {errors.password && <p className="text-sm text-red-400">{errors.password}</p>}
+                  {errors.password && (
+                    <p className="text-sm text-red-400">{errors.password}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -330,11 +387,20 @@ export default function RegisterPage() {
                     id="confirmPassword"
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     placeholder="Confirm your password"
                     className="bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
                   />
-                  {errors.confirmPassword && <p className="text-sm text-red-400">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-red-400">
+                      {errors.confirmPassword}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -363,11 +429,14 @@ export default function RegisterPage() {
                 Your Interests
               </CardTitle>
               <CardDescription>
-                Select the cybersecurity topics you're most interested in learning about
+                Select the cybersecurity topics you're most interested in
+                learning about
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {errors.interests && <p className="text-sm text-red-400">{errors.interests}</p>}
+              {errors.interests && (
+                <p className="text-sm text-red-400">{errors.interests}</p>
+              )}
 
               {/* Security Category */}
               <div>
@@ -388,7 +457,9 @@ export default function RegisterPage() {
                     >
                       <div className="flex items-start gap-3">
                         <Checkbox
-                          checked={formData.selectedInterests.includes(interest.id)}
+                          checked={formData.selectedInterests.includes(
+                            interest.id
+                          )}
                           onChange={() => handleInterestToggle(interest.id)}
                           className="mt-1"
                         />
@@ -397,7 +468,9 @@ export default function RegisterPage() {
                             <div className="text-red-400">{interest.icon}</div>
                             <h4 className="font-medium">{interest.label}</h4>
                           </div>
-                          <p className="text-sm text-gray-400">{interest.description}</p>
+                          <p className="text-sm text-gray-400">
+                            {interest.description}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -424,7 +497,9 @@ export default function RegisterPage() {
                     >
                       <div className="flex items-start gap-3">
                         <Checkbox
-                          checked={formData.selectedInterests.includes(interest.id)}
+                          checked={formData.selectedInterests.includes(
+                            interest.id
+                          )}
                           onChange={() => handleInterestToggle(interest.id)}
                           className="mt-1"
                         />
@@ -433,7 +508,9 @@ export default function RegisterPage() {
                             <div className="text-blue-400">{interest.icon}</div>
                             <h4 className="font-medium">{interest.label}</h4>
                           </div>
-                          <p className="text-sm text-gray-400">{interest.description}</p>
+                          <p className="text-sm text-gray-400">
+                            {interest.description}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -460,16 +537,22 @@ export default function RegisterPage() {
                     >
                       <div className="flex items-start gap-3">
                         <Checkbox
-                          checked={formData.selectedInterests.includes(interest.id)}
+                          checked={formData.selectedInterests.includes(
+                            interest.id
+                          )}
                           onChange={() => handleInterestToggle(interest.id)}
                           className="mt-1"
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="text-green-400">{interest.icon}</div>
+                            <div className="text-green-400">
+                              {interest.icon}
+                            </div>
                             <h4 className="font-medium">{interest.label}</h4>
                           </div>
-                          <p className="text-sm text-gray-400">{interest.description}</p>
+                          <p className="text-sm text-gray-400">
+                            {interest.description}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -496,16 +579,22 @@ export default function RegisterPage() {
                     >
                       <div className="flex items-start gap-3">
                         <Checkbox
-                          checked={formData.selectedInterests.includes(interest.id)}
+                          checked={formData.selectedInterests.includes(
+                            interest.id
+                          )}
                           onChange={() => handleInterestToggle(interest.id)}
                           className="mt-1"
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="text-purple-400">{interest.icon}</div>
+                            <div className="text-purple-400">
+                              {interest.icon}
+                            </div>
                             <h4 className="font-medium">{interest.label}</h4>
                           </div>
-                          <p className="text-sm text-gray-400">{interest.description}</p>
+                          <p className="text-sm text-gray-400">
+                            {interest.description}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -515,15 +604,23 @@ export default function RegisterPage() {
 
               {formData.selectedInterests.length > 0 && (
                 <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h4 className="font-medium mb-2">Selected Interests ({formData.selectedInterests.length})</h4>
+                  <h4 className="font-medium mb-2">
+                    Selected Interests ({formData.selectedInterests.length})
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     {formData.selectedInterests.map((interestId) => {
-                      const interest = userInterests.find((i) => i.id === interestId)
+                      const interest = userInterests.find(
+                        (i) => i.id === interestId
+                      );
                       return (
-                        <Badge key={interestId} variant="outline" className="border-cyan-500 text-cyan-500">
+                        <Badge
+                          key={interestId}
+                          variant="outline"
+                          className="border-cyan-500 text-cyan-500"
+                        >
                           {interest?.label}
                         </Badge>
-                      )
+                      );
                     })}
                   </div>
                 </div>
@@ -541,15 +638,20 @@ export default function RegisterPage() {
                 Your Expertise Level
               </CardTitle>
               <CardDescription>
-                Help us understand your current cybersecurity knowledge level to provide personalized content
+                Help us understand your current cybersecurity knowledge level to
+                provide personalized content
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {errors.expertiseLevel && <p className="text-sm text-red-400">{errors.expertiseLevel}</p>}
+              {errors.expertiseLevel && (
+                <p className="text-sm text-red-400">{errors.expertiseLevel}</p>
+              )}
 
               <RadioGroup
                 value={formData.expertiseLevel}
-                onValueChange={(value) => setFormData({ ...formData, expertiseLevel: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, expertiseLevel: value })
+                }
                 className="space-y-4"
               >
                 {expertiseLevels.map((level) => (
@@ -560,20 +662,33 @@ export default function RegisterPage() {
                           ? "border-cyan-500 bg-cyan-500/10"
                           : "border-gray-700 hover:border-gray-600"
                       }`}
-                      onClick={() => setFormData({ ...formData, expertiseLevel: level.id })}
+                      onClick={() =>
+                        setFormData({ ...formData, expertiseLevel: level.id })
+                      }
                     >
                       <div className="flex items-start gap-4">
-                        <RadioGroupItem value={level.id} id={level.id} className="mt-1" />
+                        <RadioGroupItem
+                          value={level.id}
+                          id={level.id}
+                          className="mt-1"
+                        />
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-3">
                             <Badge className={level.color}>{level.label}</Badge>
-                            <h3 className="text-lg font-medium">{level.description}</h3>
+                            <h3 className="text-lg font-medium">
+                              {level.description}
+                            </h3>
                           </div>
                           <div className="space-y-2">
-                            <h4 className="font-medium text-gray-300">This level is for you if:</h4>
+                            <h4 className="font-medium text-gray-300">
+                              This level is for you if:
+                            </h4>
                             <ul className="space-y-1">
                               {level.requirements.map((req, index) => (
-                                <li key={index} className="text-sm text-gray-400 flex items-start gap-2">
+                                <li
+                                  key={index}
+                                  className="text-sm text-gray-400 flex items-start gap-2"
+                                >
                                   <span className="text-cyan-500 mt-1">•</span>
                                   {req}
                                 </li>
@@ -594,7 +709,8 @@ export default function RegisterPage() {
                     Selected Level: {selectedExpertise.label}
                   </h4>
                   <p className="text-sm text-gray-400">
-                    HackAware will customize its explanations and recommendations based on your{" "}
+                    HackAware will customize its explanations and
+                    recommendations based on your{" "}
                     {selectedExpertise.label.toLowerCase()} level expertise.
                   </p>
                 </div>
@@ -611,15 +727,21 @@ export default function RegisterPage() {
                 <BookOpen className="h-5 w-5 text-cyan-500" />
                 Learning Goals & Preferences
               </CardTitle>
-              <CardDescription>Tell us about your learning goals and how you prefer to learn</CardDescription>
+              <CardDescription>
+                Tell us about your learning goals and how you prefer to learn
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="goals">What are your main cybersecurity goals? (Optional)</Label>
+                <Label htmlFor="goals">
+                  What are your main cybersecurity goals? (Optional)
+                </Label>
                 <Textarea
                   id="goals"
                   value={formData.goals}
-                  onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, goals: e.target.value })
+                  }
                   placeholder="e.g., Secure my company's website, learn ethical hacking, understand privacy laws..."
                   className="min-h-[100px] bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
                 />
@@ -629,20 +751,28 @@ export default function RegisterPage() {
                 <Label>How do you prefer to learn?</Label>
                 <RadioGroup
                   value={formData.learningPreference}
-                  onValueChange={(value) => setFormData({ ...formData, learningPreference: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, learningPreference: value })
+                  }
                   className="space-y-3"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="interactive" id="interactive" />
-                    <Label htmlFor="interactive">Interactive demos and hands-on examples</Label>
+                    <Label htmlFor="interactive">
+                      Interactive demos and hands-on examples
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="explanations" id="explanations" />
-                    <Label htmlFor="explanations">Detailed explanations and theory</Label>
+                    <Label htmlFor="explanations">
+                      Detailed explanations and theory
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="practical" id="practical" />
-                    <Label htmlFor="practical">Practical solutions and quick fixes</Label>
+                    <Label htmlFor="practical">
+                      Practical solutions and quick fixes
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="mixed" id="mixed" />
@@ -655,7 +785,9 @@ export default function RegisterPage() {
                 <Checkbox
                   id="notifications"
                   checked={formData.notifications}
-                  onCheckedChange={(checked) => setFormData({ ...formData, notifications: !!checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, notifications: !!checked })
+                  }
                 />
                 <Label htmlFor="notifications" className="text-sm">
                   Send me security alerts and learning recommendations
@@ -669,15 +801,18 @@ export default function RegisterPage() {
                 </h4>
                 <div className="text-sm text-gray-300 space-y-2">
                   <p>
-                    <strong>Interests:</strong> {formData.selectedInterests.length} topics selected
+                    <strong>Interests:</strong>{" "}
+                    {formData.selectedInterests.length} topics selected
                   </p>
                   <p>
-                    <strong>Level:</strong> {selectedExpertise?.label || "Not selected"}
+                    <strong>Level:</strong>{" "}
+                    {selectedExpertise?.label || "Not selected"}
                   </p>
                   <p>
                     <strong>Learning Style:</strong>{" "}
                     {formData.learningPreference
-                      ? formData.learningPreference.charAt(0).toUpperCase() + formData.learningPreference.slice(1)
+                      ? formData.learningPreference.charAt(0).toUpperCase() +
+                        formData.learningPreference.slice(1)
                       : "Not selected"}
                   </p>
                 </div>
@@ -729,5 +864,5 @@ export default function RegisterPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
