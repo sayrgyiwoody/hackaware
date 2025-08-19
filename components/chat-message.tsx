@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Shield, User } from "lucide-react"
 import { MarkdownRenderer } from "./markdown-renderer"
 import { MessageActions } from "./message-actions"
+import MessageTime from "./message-time"
 
 type MessageType = {
   id: string
@@ -39,9 +40,7 @@ export function ChatMessage({ message, onRegenerate, onEdit }: ChatMessageProps)
         <div className={`flex-1 min-w-0 ${isBot ? "" : "flex flex-col items-end"}`}>
           <div className={`flex items-center gap-2 mb-2 ${isBot ? "" : "flex-row-reverse"}`}>
             <span className="font-semibold text-white">{isBot ? "HackAware" : "You"}</span>
-            <span className="text-xs text-gray-500">
-              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
+            <MessageTime timestamp={message.timestamp} />
           </div>
 
           <div className={`${isBot ? "max-w-none" : "max-w-[80%]"}`}>

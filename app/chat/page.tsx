@@ -110,24 +110,6 @@ export default function ChatPage() {
     "What are common cloud security risks?",
   ];
 
-  // const handleScroll = () => {
-  //   const container = scrollRef.current;
-  //   if (!container) return;
-  //   const { scrollTop, scrollHeight, clientHeight } = container;
-  //   setIsUserAtBottom(scrollTop + clientHeight >= scrollHeight - 10);
-  // };
-
-  // const scrollToBottom = () => {
-  //   if (isUserAtBottom) {
-  //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  //   }
-  // };
-
-  // Only scroll when messages change AND user is at bottom
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, [messages, isUserAtBottom]);
-
   // Auto-end quiz when switching tabs or using other features
   const endCurrentQuiz = () => {
     if (currentQuizTopic && !showQuizSelection) {
@@ -1487,12 +1469,46 @@ Ready for your next cybersecurity challenge?`,
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex flex-col">
-      <main className="flex flex-col h-screen container mx-auto max-w-5xl relative">
+      
+      <main className="flex flex-col h-screen  relative">
+        <header className="border-b border-gray-800 p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center">
+              <Shield className="h-5 w-5 text-cyan-500 mr-2" />
+              <span className="font-bold">HackAware Security Chat</span>
+            </div>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="border-cyan-500 text-cyan-500">
+              {securityLevel}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="border-green-500 text-green-500"
+            >
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+              Online
+            </Badge>
+            {totalScore.completedQuizzes > 0 && (
+              <Badge
+                variant="outline"
+                className="border-purple-500 text-purple-500"
+              >
+                Total: {totalScore.totalCorrect}/{totalScore.totalQuestions}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </header>
         {/* scrollable area */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto scrollbar-none p-4 space-y-4 min-h-0"
+          className="flex-1 overflow-y-auto scrollbar-none p-4 space-y-4 min-h-0 container mx-auto max-w-5xl"
         >
           {messages.map((message) => (
             <div key={message.id}>
