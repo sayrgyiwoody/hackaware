@@ -25,6 +25,9 @@ import {
   Lightbulb,
   CheckCircle,
   HelpCircle,
+  CircleStop,
+  OctagonMinus,
+  CircleSlash2,
 } from "lucide-react";
 import Link from "next/link";
 import { ChatMessage } from "@/components/chat-message";
@@ -42,6 +45,7 @@ export default function ChatPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isRendering, setIsRendering] = useState(false);
   const [activeTab, setActiveTab] = useState("text");
   const [securityLevel, setSecurityLevel] = useState("Beginner");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -57,6 +61,7 @@ export default function ChatPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
+  const stopRef = useRef(false);
 
   // Quiz state variables
   const [currentQuizTopic, setCurrentQuizTopic] = useState<string | null>(null);
@@ -1278,6 +1283,12 @@ Ready for your next cybersecurity challenge?`,
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
+    // hide suggestion 
+    setShowSuggestions(false);
+
+    // Reset stop flag before starting
+    stopRef.current = false;
+
     // Add user message
     const userMessage: MessageType = {
       id: Date.now().toString(),
@@ -1285,9 +1296,14 @@ Ready for your next cybersecurity challenge?`,
       content: input,
       timestamp: new Date(),
     };
+    
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
     setIsTyping(true);
+    setIsRendering(true);
 
     // Create a bot message placeholder
     const botMessage: MessageType = {
@@ -1298,27 +1314,42 @@ Ready for your next cybersecurity challenge?`,
     };
     setMessages((prev) => [...prev, botMessage]);
 
-    // Hardcoded mock "streaming" response text
-
     let botText = "";
 
     // Stream chunks one by one
     for (let i = 0; i < mockChunks.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 300)); // simulate delay
+      if (stopRef.current) {
+        botText += "... stopped";
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessage.id ? { ...msg, content: botText } : msg
+          )
+        );
+        break; // stop if user clicked "Stop"
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
       botText += mockChunks[i];
 
-      // Update the bot message in state
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botMessage.id ? { ...msg, content: botText } : msg
         )
       );
 
-      // Once we start receiving chunks, stop showing typing
       if (botText.trim() !== "") {
         setIsTyping(false);
       }
     }
+
+    setIsRendering(false);
+  };
+
+  //stop handle
+  const handleStop = () => {
+    stopRef.current = true;
+    setIsRendering(false);
+    setIsTyping(false);
   };
 
   const handleQuickAction = (action: string) => {
@@ -1446,13 +1477,15 @@ Ready for your next cybersecurity challenge?`,
   const handleScroll = () => {
     if (!scrollRef.current) return;
     const { scrollTop, clientHeight, scrollHeight } = scrollRef.current;
-    const atBottom = scrollTop + clientHeight >= scrollHeight - 10; // tolerance
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 50; // tolerance
     setIsUserAtBottom(atBottom);
   };
 
   // Scroll to bottom function
   const scrollToBottom = (smooth = true) => {
-    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+    });
   };
 
   // On initial render, scroll to bottom immediately
@@ -1469,41 +1502,43 @@ Ready for your next cybersecurity challenge?`,
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex flex-col">
-      
       <main className="flex flex-col h-screen  relative">
         <header className="border-b border-gray-800 p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center">
-              <Shield className="h-5 w-5 text-cyan-500 mr-2" />
-              <span className="font-bold">HackAware Security Chat</span>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-cyan-500 text-cyan-500">
-              {securityLevel}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="border-green-500 text-green-500"
-            >
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-              Online
-            </Badge>
-            {totalScore.completedQuizzes > 0 && (
+          <div className="container mx-auto flex justify-between items-center">
+            <Link href="/" className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center">
+                <Shield className="h-5 w-5 text-cyan-500 mr-2" />
+                <span className="font-bold">HackAware Security Chat</span>
+              </div>
+            </Link>
+            <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className="border-purple-500 text-purple-500"
+                className="border-cyan-500 text-cyan-500"
               >
-                Total: {totalScore.totalCorrect}/{totalScore.totalQuestions}
+                {securityLevel}
               </Badge>
-            )}
+              <Badge
+                variant="outline"
+                className="border-green-500 text-green-500"
+              >
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                Online
+              </Badge>
+              {totalScore.completedQuizzes > 0 && (
+                <Badge
+                  variant="outline"
+                  className="border-purple-500 text-purple-500"
+                >
+                  Total: {totalScore.totalCorrect}/{totalScore.totalQuestions}
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
         {/* scrollable area */}
         <div
           ref={scrollRef}
@@ -1683,7 +1718,9 @@ Ready for your next cybersecurity challenge?`,
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        handleSendMessage();
+                        if (!isRendering) {
+                          handleSendMessage();
+                        }
                       }
                       if (e.key === "Escape") {
                         setShowSuggestions(false);
@@ -1696,11 +1733,15 @@ Ready for your next cybersecurity challenge?`,
                     }}
                   />
                   <Button
-                    onClick={handleSendMessage}
+                    onClick={isRendering ? handleStop : handleSendMessage}
                     size="icon"
-                    className="bg-cyan-500 hover:bg-cyan-600 mt-auto py-4 h-fit"
+                    className="bg-cyan-500 hover:bg-cyan-600 mt-auto py-4 h-fit disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Send className="h-5 w-5" />
+                    {isRendering ? (
+                      <CircleStop className="w-8 h-8" strokeWidth={2.25} />
+                    ) : (
+                      <Send className="w-6 h-6" />
+                    )}
                   </Button>
                 </div>
               </div>
