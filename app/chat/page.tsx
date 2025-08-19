@@ -1488,7 +1488,7 @@ Ready for your next cybersecurity challenge?`,
     });
   };
 
-  // On initial render, scroll to bottom immediately
+  // On initial render, scroll to bottom 
   useEffect(() => {
     scrollToBottom(false); // instant scroll
   }, []);
