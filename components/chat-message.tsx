@@ -48,6 +48,7 @@ export function ChatMessage({ message, onRegenerate, onEdit }: ChatMessageProps)
             {isBot ? (
               <div className="prose prose-invert max-w-none">
                 <MarkdownRenderer content={message.content} />
+                
               </div>
             ) : (
               <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-lg">

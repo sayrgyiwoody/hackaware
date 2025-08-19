@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,149 +33,12 @@ import { ScanResults } from "@/components/scan-results";
 import { SecurityThreatAlert } from "@/components/security-threat-alert";
 import { InteractiveDemo } from "@/components/interactive-demo";
 import { SecurityQuiz } from "@/components/security-quiz";
-
-type MessageType = {
-  id: string;
-  role: "user" | "bot";
-  content: string;
-  timestamp: Date;
-  icon?: string;
-  status?: "normal" | "warning" | "danger" | "success" | "info";
-  scanResults?: any;
-  isScanning?: boolean;
-  scanProgress?: number;
-  threatAlert?: any;
-  interactiveDemo?: any;
-  quiz?: any;
-  codeExample?: any;
-  securityTip?: any;
-};
-
-const securityTopics = [
-  { icon: "🔒", label: "HTTPS & SSL", command: "explain HTTPS" },
-  {
-    icon: "🛡️",
-    label: "Security Headers",
-    command: "what are security headers",
-  },
-  {
-    icon: "🍪",
-    label: "Cookie Security",
-    command: "cookie security best practices",
-  },
-  {
-    icon: "🎯",
-    label: "XSS Prevention",
-    command: "how to prevent XSS attacks",
-  },
-  {
-    icon: "🔐",
-    label: "Authentication",
-    command: "secure authentication methods",
-  },
-  {
-    icon: "📊",
-    label: "Privacy Tracking",
-    command: "explain privacy tracking",
-  },
-];
-
-const quizTopics = [
-  {
-    id: "web-security",
-    title: "Web Security",
-    icon: "🛡️",
-    description: "XSS, CSRF, injection attacks",
-  },
-  {
-    id: "authentication",
-    title: "Authentication",
-    icon: "🔐",
-    description: "Passwords, 2FA, sessions",
-  },
-  {
-    id: "privacy",
-    title: "Privacy & GDPR",
-    icon: "👁️",
-    description: "Data protection, tracking",
-  },
-  {
-    id: "https-ssl",
-    title: "HTTPS & SSL",
-    icon: "🔒",
-    description: "Encryption, certificates",
-  },
-  {
-    id: "headers",
-    title: "Security Headers",
-    icon: "📋",
-    description: "CSP, HSTS, X-Frame-Options",
-  },
-  {
-    id: "malware",
-    title: "Malware & Phishing",
-    icon: "🦠",
-    description: "Detection, prevention",
-  },
-];
-
-const difficultyLevels = [
-  {
-    id: "beginner",
-    title: "Beginner",
-    icon: "🌱",
-    description: "Basic concepts and fundamentals",
-    color: "text-green-400 border-green-400",
-  },
-  {
-    id: "intermediate",
-    title: "Intermediate",
-    icon: "⚡",
-    description: "Practical applications and scenarios",
-    color: "text-yellow-400 border-yellow-400",
-  },
-  {
-    id: "advanced",
-    title: "Advanced",
-    icon: "🔥",
-    description: "Complex attacks and defense strategies",
-    color: "text-red-400 border-red-400",
-  },
-];
-
-const quickActions = [
-  { icon: Scan, label: "Scan Website", action: "scan" },
-  { icon: Eye, label: "Privacy Check", action: "privacy" },
-  { icon: Shield, label: "Security Audit", action: "security" },
-  { icon: Code, label: "Code Review", action: "code" },
-];
+import { mockChunks, quizTopics, welcomeMessage } from "./mockdata";
+import { MessageType } from "./types";
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<MessageType[]>([
-    {
-      id: "welcome",
-      role: "bot",
-      content: `# Welcome to HackAware! 🛡️
-
-I'm your AI web security assistant. I can help you:
-
-🔍 **Scan websites** for vulnerabilities and privacy risks  
-🛠️ **Review code** for security issues  
-📚 **Learn** through interactive demos and quizzes  
-🎯 **Understand** how attacks work and how to prevent them
-
-**Try asking me to:**
-- Scan a website URL
-- Explain XSS or SQL injection
-- Review your code for vulnerabilities
-- Show security best practices
-
-What would you like to explore first?`,
-      timestamp: new Date(),
-      status: "success",
-    },
-  ]);
-  
+  const [messages, setMessages] = useState<MessageType[]>(welcomeMessage);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -191,6 +54,9 @@ What would you like to explore first?`,
   const [urlScanResult, setUrlScanResult] = useState<any>(null);
   const [urlScanProgress, setUrlScanProgress] = useState(0);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
 
   // Quiz state variables
   const [currentQuizTopic, setCurrentQuizTopic] = useState<string | null>(null);
@@ -227,15 +93,40 @@ What would you like to explore first?`,
     "Scan google.com for privacy issues",
     "Explain phishing detection",
     "Show password security best practices",
+    "What is OWASP Top 10?",
+    "How does a Web Application Firewall (WAF) work?",
+    "Explain CORS misconfigurations",
+    "Check if a site uses HSTS",
+    "What are common SSL/TLS vulnerabilities?",
+    "Explain session hijacking and prevention",
+    "How do cookie security flags (HttpOnly, Secure, SameSite) work?",
+    "Detect outdated JavaScript libraries",
+    "How to secure APIs against attacks?",
+    "Explain directory traversal attacks",
+    "What is brute force protection?",
+    "Scan a site for open redirects",
+    "How to detect hidden iframes?",
+    "Explain DNS spoofing and prevention",
+    "What are common cloud security risks?",
   ];
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // const handleScroll = () => {
+  //   const container = scrollRef.current;
+  //   if (!container) return;
+  //   const { scrollTop, scrollHeight, clientHeight } = container;
+  //   setIsUserAtBottom(scrollTop + clientHeight >= scrollHeight - 10);
+  // };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // const scrollToBottom = () => {
+  //   if (isUserAtBottom) {
+  //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // };
+
+  // Only scroll when messages change AND user is at bottom
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages, isUserAtBottom]);
 
   // Auto-end quiz when switching tabs or using other features
   const endCurrentQuiz = () => {
@@ -1315,9 +1206,97 @@ Ready for your next cybersecurity challenge?`,
   //   }
 
   //stream response
+  // const handleSendMessage = async () => {
+  //   if (!input.trim()) return;
+
+  //   const userMessage: MessageType = {
+  //     id: Date.now().toString(),
+  //     role: "user",
+  //     content: input,
+  //     timestamp: new Date(),
+  //   };
+  //   setMessages((prev) => [...prev, userMessage]);
+  //   setInput("");
+  //   setIsTyping(true);
+
+  //   try {
+  //     const response = await fetch(`${API_URL}/chat`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Accept: "application/json",
+  //       },
+  //       body: JSON.stringify({ question: input }),
+  //     });
+
+  //     if (!response.body) throw new Error("ReadableStream not supported");
+
+  //     const reader = response.body.getReader();
+  //     const decoder = new TextDecoder("utf-8");
+  //     let botText = "";
+
+  //     const botMessage: MessageType = {
+  //       id: (Date.now() + 1).toString(),
+  //       role: "bot",
+  //       content: "",
+  //       timestamp: new Date(),
+  //       // interactiveDemo: generateSecurityDemo(demoTopic),
+  //       status: "info",
+  //     };
+
+  //     // Add initial bot message to chat
+  //     setMessages((prev) => [...prev, botMessage]);
+
+  //     let buffer = "";
+
+  //     while (true) {
+  //       const { done, value } = await reader.read();
+  //       if (done) break;
+
+  //       buffer += decoder.decode(value, { stream: true });
+
+  //       // Split by lines (each line is a JSON object)
+  //       const lines = buffer.split("\n");
+  //       buffer = lines.pop() || ""; // keep the last incomplete line in buffer
+
+  //       for (const line of lines) {
+  //         if (!line.trim()) continue;
+
+  //         try {
+  //           const parsed = JSON.parse(line);
+  //           const content = parsed.message?.content || "";
+  //           // Remove <think> tags
+  //           const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
+  //           botText += cleaned;
+
+  //           // Update bot message in real-time
+  //           setMessages((prev) =>
+  //             prev.map((msg) =>
+  //               msg.id === botMessage.id ? { ...msg, content: botText } : msg
+  //             )
+  //           );
+
+  //           // Set typing to false after the first text is added
+  //           if (botText.trim() !== "") {
+  //             setIsTyping(false);
+  //           }
+  //         } catch (e) {
+  //           console.warn("Could not parse line as JSON:", line);
+  //         }
+  //       }
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Error streaming response:", error?.message || error);
+  //   } finally {
+  //     setIsTyping(false);
+  //   }
+  // };
+
+  // Mock streaming response
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
+    // Add user message
     const userMessage: MessageType = {
       id: Date.now().toString(),
       role: "user",
@@ -1328,76 +1307,35 @@ Ready for your next cybersecurity challenge?`,
     setInput("");
     setIsTyping(true);
 
-    try {
-      const response = await fetch(`${API_URL}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ question: input }),
-      });
+    // Create a bot message placeholder
+    const botMessage: MessageType = {
+      id: (Date.now() + 1).toString(),
+      role: "bot",
+      content: "",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, botMessage]);
 
-      if (!response.body) throw new Error("ReadableStream not supported");
+    // Hardcoded mock "streaming" response text
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let botText = "";
+    let botText = "";
 
-      const botMessage: MessageType = {
-        id: (Date.now() + 1).toString(),
-        role: "bot",
-        content: "",
-        timestamp: new Date(),
-        // interactiveDemo: generateSecurityDemo(demoTopic),
-        status: "info",
-      };
+    // Stream chunks one by one
+    for (let i = 0; i < mockChunks.length; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 300)); // simulate delay
+      botText += mockChunks[i];
 
-      // Add initial bot message to chat
-      setMessages((prev) => [...prev, botMessage]);
+      // Update the bot message in state
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === botMessage.id ? { ...msg, content: botText } : msg
+        )
+      );
 
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // Split by lines (each line is a JSON object)
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || ""; // keep the last incomplete line in buffer
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-
-          try {
-            const parsed = JSON.parse(line);
-            const content = parsed.message?.content || "";
-            // Remove <think> tags
-            const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
-            botText += cleaned;
-
-            // Update bot message in real-time
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === botMessage.id ? { ...msg, content: botText } : msg
-              )
-            );
-
-            // Set typing to false after the first text is added
-            if (botText.trim() !== "") {
-              setIsTyping(false);
-            }
-          } catch (e) {
-            console.warn("Could not parse line as JSON:", line);
-          }
-        }
+      // Once we start receiving chunks, stop showing typing
+      if (botText.trim() !== "") {
+        setIsTyping(false);
       }
-    } catch (error: any) {
-      console.error("Error streaming response:", error?.message || error);
-    } finally {
-      setIsTyping(false);
     }
   };
 
@@ -1428,139 +1366,134 @@ Ready for your next cybersecurity challenge?`,
     setSuggestions([]);
   };
 
-const scanUrl = async () => {
-  if (!urlToScan.trim()) return;
+  const scanUrl = async () => {
+    if (!urlToScan.trim()) return;
 
-  endCurrentQuiz();
+    endCurrentQuiz();
 
-  const scanMessageId = Date.now().toString();
-  const scanMessage: MessageType = {
-    id: scanMessageId,
-    role: "bot",
-    content: `🔍 **Initiating comprehensive security scan of ${urlToScan}**\n\nScanning for vulnerabilities, privacy issues, and security misconfigurations...`,
-    timestamp: new Date(),
-    icon: "🛡️",
-    isScanning: true,
-    scanProgress: 0,
-    status: "info",
+    const scanMessageId = Date.now().toString();
+    const scanMessage: MessageType = {
+      id: scanMessageId,
+      role: "bot",
+      content: `🔍 **Initiating comprehensive security scan of ${urlToScan}**\n\nScanning for vulnerabilities, privacy issues, and security misconfigurations...`,
+      timestamp: new Date(),
+      icon: "🛡️",
+      isScanning: true,
+      scanProgress: 0,
+      status: "info",
+    };
+
+    setMessages((prev) => [...prev, scanMessage]);
+    setIsUrlScanning(true);
+    setUrlScanProgress(0);
+
+    // Show scanning progress (optional)
+    const steps = [
+      "Connecting to website...",
+      "Analyzing HTTP headers...",
+      "Checking SSL/TLS configuration...",
+      "Scanning for third-party trackers...",
+      "Detecting JavaScript libraries...",
+      "Analyzing privacy policies...",
+      "Checking security headers...",
+      "Scanning for vulnerabilities...",
+      "Generating security report...",
+      "Finalizing analysis...",
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const progress = ((i + 1) / steps.length) * 100;
+      setUrlScanProgress(progress);
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === scanMessageId ? { ...msg, scanProgress: progress } : msg
+        )
+      );
+    }
+
+    try {
+      // scan the URL using your API
+      const response = await fetch(`${API_URL}/scan/url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ question: urlToScan }),
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch scan results");
+
+      const result = await response.json();
+
+      // Update message with real results
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === scanMessageId
+            ? {
+                ...msg,
+                isScanning: false,
+                scanResults: result,
+                content: `🔍 **Security Scan Complete for ${urlToScan}**\n\nOverall Security Score: **${result.overallScore}/100**\n\nI found ${result.issues.length} security issues that need attention.`,
+              }
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === scanMessageId
+            ? {
+                ...msg,
+                isScanning: false,
+                status: "error",
+                content: `❌ Failed to scan ${urlToScan}. Please try again.`,
+              }
+            : msg
+        )
+      );
+    }
+
+    setIsUrlScanning(false);
+    setUrlToScan("");
   };
 
-  setMessages((prev) => [...prev, scanMessage]);
-  setIsUrlScanning(true);
-  setUrlScanProgress(0);
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, clientHeight, scrollHeight } = scrollRef.current;
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 100; // tolerance
+    setIsUserAtBottom(atBottom);
+  };
 
-  // Show scanning progress (optional)
-  const steps = [
-    "Connecting to website...",
-    "Analyzing HTTP headers...",
-    "Checking SSL/TLS configuration...",
-    "Scanning for third-party trackers...",
-    "Detecting JavaScript libraries...",
-    "Analyzing privacy policies...",
-    "Checking security headers...",
-    "Scanning for vulnerabilities...",
-    "Generating security report...",
-    "Finalizing analysis...",
-  ];
+  // Scroll to bottom function
+  const scrollToBottom = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  };
 
-  for (let i = 0; i < steps.length; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    const progress = ((i + 1) / steps.length) * 100;
-    setUrlScanProgress(progress);
+  // On initial render, scroll to bottom immediately
+  useEffect(() => {
+    scrollToBottom(false); // instant scroll
+  }, []);
 
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === scanMessageId ? { ...msg, scanProgress: progress } : msg
-      )
-    );
-  }
-
-  try {
-    // scan the URL using your API
-    const response = await fetch(`${API_URL}/scan/url`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ question: urlToScan }),
-    });
-
-    if (!response.ok) throw new Error("Failed to fetch scan results");
-
-    const result = await response.json(); 
-
-    // Update message with real results
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === scanMessageId
-          ? {
-              ...msg,
-              isScanning: false,
-              scanResults: result,
-              content: `🔍 **Security Scan Complete for ${urlToScan}**\n\nOverall Security Score: **${result.overallScore}/100**\n\nI found ${result.issues.length} security issues that need attention.`,
-            }
-          : msg
-      )
-    );
-  } catch (error) {
-    console.error(error);
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === scanMessageId
-          ? {
-              ...msg,
-              isScanning: false,
-              status: "error",
-              content: `❌ Failed to scan ${urlToScan}. Please try again.`,
-            }
-          : msg
-      )
-    );
-  }
-
-  setIsUrlScanning(false);
-  setUrlToScan("");
-};
+  // When messages update, scroll only if user is at bottom
+  useEffect(() => {
+    if (isUserAtBottom) {
+      scrollToBottom();
+    }
+  }, [messages, isUserAtBottom]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex flex-col">
-      <header className="border-b border-gray-800 p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center">
-              <Shield className="h-5 w-5 text-cyan-500 mr-2" />
-              <span className="font-bold">HackAware Security Chat</span>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-cyan-500 text-cyan-500">
-              {securityLevel}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="border-green-500 text-green-500"
-            >
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-              Online
-            </Badge>
-            {totalScore.completedQuizzes > 0 && (
-              <Badge
-                variant="outline"
-                className="border-purple-500 text-purple-500"
-              >
-                Total: {totalScore.totalCorrect}/{totalScore.totalQuestions}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 container mx-auto max-w-5xl flex flex-col min-h-0 pb-36">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+      <main className="flex flex-col h-screen container mx-auto max-w-5xl relative">
+        {/* scrollable area */}
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto scrollbar-none p-4 space-y-4 min-h-0"
+        >
           {messages.map((message) => (
             <div key={message.id}>
               <ChatMessage message={message} />
@@ -1685,7 +1618,8 @@ const scanUrl = async () => {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="w-full max-w-4xl fixed bottom-4 left-1/2 -translate-x-1/2  p-4 border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 rounded-xl">
+        {/* Fixed input area */}
+        <div className="w-full max-w-4xl mx-auto p-4 border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 rounded-xl mb-4">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
@@ -1714,13 +1648,22 @@ const scanUrl = async () => {
                 )}
                 <div className="flex gap-2">
                   <Textarea
+                    ref={textareaRef}
                     value={input}
                     onChange={(e) => {
                       setInput(e.target.value);
                       filterSuggestions(e.target.value);
+
+                      // Auto-grow logic
+                      const el = textareaRef.current;
+                      if (el) {
+                        el.style.height = "auto"; // reset height
+                        el.style.height = el.scrollHeight + "px"; // expand to fit content
+                      }
                     }}
+                    rows={1}
                     placeholder="Ask about web security, vulnerabilities, best practices... (start typing for suggestions)"
-                    className="min-h-[60px] bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
+                    className="min-h-[60px] bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500 overflow-hidden resize-none"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -1739,7 +1682,7 @@ const scanUrl = async () => {
                   <Button
                     onClick={handleSendMessage}
                     size="icon"
-                    className="bg-cyan-500 hover:bg-cyan-600 h-auto"
+                    className="bg-cyan-500 hover:bg-cyan-600 mt-auto py-4 h-fit"
                   >
                     <Send className="h-5 w-5" />
                   </Button>

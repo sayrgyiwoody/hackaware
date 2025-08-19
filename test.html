@@ -1,53 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <title>Login</title>
-    <style>
-        /* Basic styling to make the page user-friendly */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        input, button {
-            margin: 10px 0;
-            padding: 8px;
-            width: 300px;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #2196F3;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailwind Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <h2>Login to Your Account</h2>
-        
-        <!-- Login form -->
-        <form id="loginForm">
-            <input type="text" id="username" placeholder="Username" required>
-            <input type="password" id="password" placeholder="Password" required>
-            
-            <button type="submit">Login</button>
-        </form>
+
+<body class="flex flex-col h-screen font-sans">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white text-center font-bold text-lg p-4">
+        Chatbot
+    </header>
+
+    <!-- Chat content -->
+    <div id="chatContent" class="flex-1 p-4 bg-gray-100 overflow-y-auto flex flex-col gap-3">
+        <div class="bg-gray-300 text-black p-3 rounded-lg self-start max-w-[70%]">
+            Hello! How can I help you today?
+        </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="flex p-4 bg-white border-t border-gray-300">
+        <input id="userInput" type="text" placeholder="Type a message..."
+            class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <button onclick="sendMessage()" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Send
+        </button>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            // Login logic will go here
-            e.preventDefault();
-        });
+        const chatContent = document.getElementById('chatContent');
+        const userInput = document.getElementById('userInput');
 
-        // Add any additional security measures (e.g., session management, CSRF protection)
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // User message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'bg-blue-600 text-white p-3 rounded-lg self-end max-w-[70%]';
+            userMessage.textContent = text;
+            chatContent.appendChild(userMessage);
+
+            chatContent.scrollTop = chatContent.scrollHeight;
+            userInput.value = '';
+
+            // Bot response
+            setTimeout(() => {
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bg-gray-300 text-black p-3 rounded-lg self-start max-w-[70%]';
+                botMessage.textContent = "You said: " + text;
+                chatContent.appendChild(botMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+            }, 500);
+        }
+
+        userInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') sendMessage();
+        });
     </script>
 </body>
+
 </html>
