@@ -13,9 +13,15 @@ import { HeroSection } from "@/components/hero-section";
 import { FeatureCard } from "@/components/feature-card";
 import { PrivacyModal } from "@/components/privacy-modal";
 import { fetchMe, logoutUser } from "@/lib/authService";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  const isLoggedIn = Boolean(localStorage.getItem("access_token"));
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    setIsLoggedIn(Boolean(token));
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
