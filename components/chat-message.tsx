@@ -17,9 +17,10 @@ interface ChatMessageProps {
   message: MessageType
   onRegenerate?: () => void
   onEdit?: () => void
+  isRendering: boolean
 }
 
-export function ChatMessage({ message, onRegenerate, onEdit }: ChatMessageProps) {
+export function ChatMessage({ message, onRegenerate, onEdit, isRendering }: ChatMessageProps) {
   const isBot = message.role === "bot"
 
   if (!message || !message.content) {
@@ -56,7 +57,7 @@ export function ChatMessage({ message, onRegenerate, onEdit }: ChatMessageProps)
             )}
           </div>
 
-          {isBot && (
+          {isBot && !isRendering && (
             <MessageActions
               content={message.content}
               messageId={message.id}

@@ -1,31 +1,21 @@
 "use client";
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Shield, MessageSquare, BookOpen, ChevronRight, Globe } from "lucide-react"
-import { HeroSection } from "@/components/hero-section"
-import { FeatureCard } from "@/components/feature-card"
-import { PrivacyModal } from "@/components/privacy-modal"
-import { useEffect, useState } from "react"
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import {
+  Shield,
+  MessageSquare,
+  BookOpen,
+  ChevronRight,
+  Globe,
+  LogOut,
+} from "lucide-react";
+import { HeroSection } from "@/components/hero-section";
+import { FeatureCard } from "@/components/feature-card";
+import { PrivacyModal } from "@/components/privacy-modal";
+import { fetchMe, logoutUser } from "@/lib/authService";
 
 export default function Home() {
-
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const res = await fetch("/api/me", {
-        credentials: "include", //  send cookies
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
+  const isLoggedIn = Boolean(localStorage.getItem("access_token"));
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
@@ -37,22 +27,55 @@ export default function Home() {
           </span>
         </div>
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/" className="text-gray-300 hover:text-white transition-colors">
+          <Link
+            href="/"
+            className="text-gray-300 hover:text-white transition-colors"
+          >
             Home
           </Link>
-          <Link href="/features" className="text-gray-300 hover:text-white transition-colors">
+          <Link
+            href="/features"
+            className="text-gray-300 hover:text-white transition-colors"
+          >
             Features
           </Link>
-          <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
+          <Link
+            href="/about"
+            className="text-gray-300 hover:text-white transition-colors"
+          >
             About
           </Link>
-          <Button asChild variant="outline" className="border-cyan-500 text-cyan-500 hover:bg-cyan-950 bg-transparent">
-            <Link href="/login">Login</Link>
-          </Button>
         </nav>
-        <Button asChild className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
-          <Link href="/chat">Chat with HackAware</Link>
-        </Button>
+        {isLoggedIn ? (
+            <Button
+              onClick={() => {
+                logoutUser();
+                window.location.href = "/login";
+              }}
+              variant="outline"
+            className="border-red-500 text-red-500 hover:bg-red-600 bg-transparent"
+            >
+            Logout 
+            <LogOut/>
+          </Button>
+          
+          ) : (
+            <div className=" flex space-x-2">
+              <Button
+              asChild
+              className=" bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+            >
+              <Link href="/login">Login</Link>
+            </Button>
+            <Button
+            asChild
+            variant="outline"
+            className="border-cyan-500 text-cyan-500 hover:bg-cyan-950 bg-transparent"
+          >
+            <Link href="/register">Register</Link>
+          </Button>
+            </div>
+          )}
       </header>
 
       <HeroSection tagline="Chat with HackAware for personalized cybersecurity advice." />
@@ -82,10 +105,13 @@ export default function Home() {
       </section>
 
       <section className="container mx-auto py-16 px-4 text-center">
-        <h2 className="text-3xl font-bold mb-6">Ready to secure your digital life?</h2>
+        <h2 className="text-3xl font-bold mb-6">
+          Ready to secure your digital life?
+        </h2>
         <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-          HackAware combines AI intelligence with cybersecurity expertise to keep you safe online. Start chatting with
-          HackAware today and take control of your digital security.
+          HackAware combines AI intelligence with cybersecurity expertise to
+          keep you safe online. Start chatting with HackAware today and take
+          control of your digital security.
         </p>
         <Button
           asChild
@@ -107,9 +133,11 @@ export default function Home() {
             <Shield className="h-6 w-6 text-cyan-500" />
             <span className="font-bold">HackAware</span>
           </div>
-          <div className="text-sm text-gray-400">© {new Date().getFullYear()} HackAware. All rights reserved.</div>
+          <div className="text-sm text-gray-400">
+            © {new Date().getFullYear()} HackAware. All rights reserved.
+          </div>
         </div>
       </footer>
     </main>
-  )
+  );
 }

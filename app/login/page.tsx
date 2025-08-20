@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Shield, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { loginUser } from "@/lib/authService"
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,25 +37,13 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   try {
     setIsLoading(true);
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const payload = {
       email: formData.email,
       password: formData.password,
     };
 
-    const res = await fetch(`${API_URL}/users/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      credentials: "include", // 👈 send HttpOnly cookie
-    });
-
-    if (!res.ok) {
-      const errData = await res.json();
-      console.error(errData);
-      throw new Error("Login failed");
-    }
+    await loginUser(payload);
 
     // JWT is now in HttpOnly cookie
     router.push("/chat");

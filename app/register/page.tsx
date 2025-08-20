@@ -34,6 +34,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
+import { registerUser } from "@/lib/authService";
 
 type UserInterest = {
   id: string;
@@ -250,20 +251,7 @@ export default function RegisterPage() {
         password: formData.password,
       };
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-      console.log("Submitting registration:", payload);
-
-      const res = await fetch(`${API_URL}/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include", // VERY IMPORTANT to receive HttpOnly cookie
-      });
-
-      if (!res.ok) throw new Error("Registration failed");
-
-      // JWT is already stored in HttpOnly cookie (safe)
+      await registerUser(payload);
 
       router.push("/chat");
     } catch (err) {

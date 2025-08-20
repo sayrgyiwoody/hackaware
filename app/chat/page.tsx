@@ -39,8 +39,12 @@ import { InteractiveDemo } from "@/components/interactive-demo";
 import { SecurityQuiz } from "@/components/security-quiz";
 import { mockChunks, quizTopics, welcomeMessage } from "./mockdata";
 import { MessageType } from "./types";
+import { useAuth } from "@/context/AuthContext";
+import SidePanel from "./components/SidePanel";
 
 export default function ChatPage() {
+  const { user, loading, logout } = useAuth();
+
   const [messages, setMessages] = useState<MessageType[]>(welcomeMessage);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -48,7 +52,7 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
   const [activeTab, setActiveTab] = useState("text");
-  const [securityLevel, setSecurityLevel] = useState("Beginner");
+  const [securityLevel, setSecurityLevel] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userInput = "userInput"; // Declare userInput variable
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -374,9 +378,26 @@ export default function ChatPage() {
     }
   }, [messages, isUserAtBottom]);
 
+  const chatHistory = [
+    { id: "1", title: "Introduction to Web Security" },
+    { id: "2", title: "Understanding XSS Attacks" },
+    { id: "3", title: "SQL Injection Prevention Tips" },
+    { id: "4", title: "Analyzing HTTPS Implementation" },
+    { id: "5", title: "Exploring OWASP Top 10" },
+  ];
+
+  const [selectedChatId, setSelectedChatId] = useState(null);
+
+  function selectChat(id: string): void {
+    setSelectedChatId(id);
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex flex-col">
-      <main className="flex flex-col h-screen  relative">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex">
+      {/* Side Panel */}
+      <SidePanel chatHistory={chatHistory} selectedChatId={selectedChatId} selectChat={selectChat} />
+
+      <main className="flex flex-col w-full h-screen  relative">
         <header className="border-b border-gray-800 p-4">
           <div className="container mx-auto flex justify-between items-center">
             <Link href="/" className="flex items-center gap-2">
@@ -392,12 +413,13 @@ export default function ChatPage() {
                 </span>
               </div>
             </Link>
-            <div className="flex items-center gap-2">
+            {user && (
+              <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
                 className="border-cyan-500 text-cyan-500"
               >
-                {securityLevel}
+                {user?.expertise}
               </Badge>
               <Badge
                 variant="outline"
@@ -406,8 +428,8 @@ export default function ChatPage() {
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
                 Online
               </Badge>
-             
             </div>
+            )}
           </div>
         </header>
         {/* scrollable area */}
@@ -418,7 +440,7 @@ export default function ChatPage() {
         >
           {messages.map((message) => (
             <div key={message.id}>
-              <ChatMessage message={message} />
+              <ChatMessage message={message} isRendering={isRendering} />
 
               {message.isScanning && (
                 <div className="ml-11 mt-2">
@@ -729,9 +751,7 @@ export default function ChatPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="quiz" className="mt-0">
-              
-            </TabsContent>
+            <TabsContent value="quiz" className="mt-0"></TabsContent>
           </Tabs>
         </div>
       </main>

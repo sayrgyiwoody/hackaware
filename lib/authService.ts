@@ -1,0 +1,60 @@
+// lib/authService.ts
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // e.g. "http://localhost:5000/api"
+
+export async function registerUser(payload:any) {
+  const res = await fetch(`${API_URL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Registration failed");
+  return res.json();
+}
+
+export async function loginUser(payload:any) {
+  const res = await fetch(`${API_URL}/users/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Login failed");
+  const data = await res.json();
+
+  // Store token in localStorage
+  if (typeof window !== "undefined") {
+    localStorage.setItem("access_token", data.access_token);
+  }
+
+  return data;
+}
+
+export function getToken() {
+    return localStorage.getItem("access_token");
+}
+
+export function logoutUser() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("access_token");
+  }
+}
+
+/**
+ * Fetch current user info using /auth/me endpoint
+ */
+export async function fetchMe() {
+      const token = getToken();
+  if (!token) throw new Error("No token found");
+
+  const res = await fetch(`${API_URL}/users/me`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch user");
+  return res.json(); // should return user data
+}
