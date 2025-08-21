@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { SidePanelFooter } from "./SidePanelFooter";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SidePanel({
   chatHistory,
@@ -11,6 +13,11 @@ export default function SidePanel({
   selectChat: (id: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false); // mobile toggle
+  const auth = useAuth();
+
+  if (!auth.user) {
+    return null; // or handle unauthenticated state
+  }
 
   return (
     <>
@@ -67,10 +74,8 @@ export default function SidePanel({
           ))}
         </div>
 
-        {/* Optional Footer */}
-        <div className="p-4 border-t border-gray-800 text-gray-400 text-xs">
-          Version 1.0
-        </div>
+        {/* Footer */}
+        <SidePanelFooter  />
       </aside>
     </>
   );

@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = () => {
+    console.log('logout')
     logoutUser();
     setUser(null);
     window.location.href = "/login";

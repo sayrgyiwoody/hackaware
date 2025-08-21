@@ -40,7 +40,7 @@ import { SecurityQuiz } from "@/components/security-quiz";
 import { mockChunks, quizTopics, welcomeMessage } from "./mockdata";
 import { MessageType } from "./types";
 import { useAuth } from "@/context/AuthContext";
-import SidePanel from "./components/SidePanel";
+import SidePanel from "./components/layout/SidePanel";
 
 export default function ChatPage() {
   const { user, loading, logout } = useAuth();
