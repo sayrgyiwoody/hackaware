@@ -39,9 +39,14 @@ export default function SidePanel({
 
       {/* Side Panel */}
       <aside
-        className={`fixed top-0 left-0 z-30 h-screen w-72 bg-gray-900 flex flex-col border-r border-gray-800 transform transition-transform duration-300
-          ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:relative md:block`}
+        className={`fixed top-0 left-0 z-30 h-screen overflow-y-auto w-72 bg-gray-900 flex flex-col border-r border-gray-800 
+            scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900
+            transform transition-transform duration-300
+            ${
+              isOpen ? "translate-x-0" : "-translate-x-full"
+            } md:translate-x-0 md:relative md:block`}
       >
+        {/* content */}
         {/* Close button on mobile */}
         <div className="md:hidden flex justify-end p-2">
           <button
@@ -75,7 +80,7 @@ export default function SidePanel({
         </div>
 
         {/* Footer */}
-        <SidePanelFooter  />
+        <SidePanelFooter />
       </aside>
     </>
   );

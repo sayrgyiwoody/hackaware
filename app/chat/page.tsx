@@ -70,39 +70,6 @@ export default function ChatPage() {
   const controller = new AbortController();
   const signal = controller.signal;
 
-  const autoSuggestQueries = [
-    "Scan facebook.com for security vulnerabilities",
-    "Explain XSS attacks and prevention",
-    "Show me SQL injection demo",
-    "What are security headers?",
-    "How does HTTPS work?",
-    "Analyze privacy tracking on websites",
-    "Demonstrate clickjacking attack",
-    "Check website for malware",
-    "Explain CSRF protection",
-    "Show secure coding practices",
-    "What is Content Security Policy?",
-    "How to prevent data breaches?",
-    "Scan google.com for privacy issues",
-    "Explain phishing detection",
-    "Show password security best practices",
-    "What is OWASP Top 10?",
-    "How does a Web Application Firewall (WAF) work?",
-    "Explain CORS misconfigurations",
-    "Check if a site uses HSTS",
-    "What are common SSL/TLS vulnerabilities?",
-    "Explain session hijacking and prevention",
-    "How do cookie security flags (HttpOnly, Secure, SameSite) work?",
-    "Detect outdated JavaScript libraries",
-    "How to secure APIs against attacks?",
-    "Explain directory traversal attacks",
-    "What is brute force protection?",
-    "Scan a site for open redirects",
-    "How to detect hidden iframes?",
-    "Explain DNS spoofing and prevention",
-    "What are common cloud security risks?",
-  ];
-
   const filterSuggestions = (inputValue: string) => {
     if (inputValue.length < 2) {
       setSuggestions([]);
@@ -384,6 +351,16 @@ export default function ChatPage() {
     { id: "3", title: "SQL Injection Prevention Tips" },
     { id: "4", title: "Analyzing HTTPS Implementation" },
     { id: "5", title: "Exploring OWASP Top 10" },
+    { id: "6", title: "Mitigating CSRF Attacks" },
+    { id: "7", title: "Secure Cookie Practices" },
+    { id: "8", title: "Understanding Clickjacking" },
+    { id: "9", title: "Implementing Content Security Policy" },
+    { id: "10", title: "Detecting Security Misconfigurations" },
+    { id: "11", title: "Preventing Directory Traversal" },
+    { id: "12", title: "Analyzing API Security" },
+    { id: "13", title: "Exploring Authentication Mechanisms" },
+    { id: "14", title: "Securing File Uploads" },
+    { id: "15", title: "Understanding Security Tokens" },
   ];
 
   const [selectedChatId, setSelectedChatId] = useState(null);
