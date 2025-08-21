@@ -31,7 +31,7 @@ import {
   PauseOctagon,
 } from "lucide-react";
 import Link from "next/link";
-import { ChatMessage } from "@/components/chat-message";
+import { ChatMessage } from "@/app/chat/components/ChatMessage";
 import { ChatTypingIndicator } from "@/components/chat-typing-indicator";
 import { ScanResults } from "@/components/scan-results";
 import { SecurityThreatAlert } from "@/components/security-threat-alert";

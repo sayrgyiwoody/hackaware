@@ -2,19 +2,7 @@
 
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Shield,
   Send,
@@ -31,19 +19,21 @@ import {
   PauseOctagon,
 } from "lucide-react";
 import Link from "next/link";
-import { ChatMessage } from "@/components/chat-message";
 import { ChatTypingIndicator } from "@/components/chat-typing-indicator";
-import { ScanResults } from "@/components/scan-results";
-import { SecurityThreatAlert } from "@/components/security-threat-alert";
-import { InteractiveDemo } from "@/components/interactive-demo";
-import { SecurityQuiz } from "@/components/security-quiz";
-import { mockChunks, quizTopics, welcomeMessage } from "./mockdata";
+import {
+  autoSuggestQueries,
+  chatHistory,
+  welcomeMessage,
+} from "./mockdata";
 import { MessageType } from "./types";
 import { useAuth } from "@/context/AuthContext";
 import SidePanel from "./components/layout/SidePanel";
+import MessageRenderer from "./components/MessageRenderer";
+import InputTabs from "./components/InputTabs";
+import ChatHeader from "./components/ChatHeader";
 
 export default function ChatPage() {
-  const { user, loading, logout } = useAuth();
+  const { user } = useAuth();
 
   const [messages, setMessages] = useState<MessageType[]>(welcomeMessage);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -51,17 +41,12 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
-  const [activeTab, setActiveTab] = useState("text");
-  const [securityLevel, setSecurityLevel] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const userInput = "userInput"; // Declare userInput variable
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [urlToScan, setUrlToScan] = useState("");
   const [isUrlScanning, setIsUrlScanning] = useState(false);
-  const [urlScanResult, setUrlScanResult] = useState<any>(null);
-  const [urlScanProgress, setUrlScanProgress] = useState(0);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -345,24 +330,6 @@ export default function ChatPage() {
     }
   }, [messages, isUserAtBottom]);
 
-  const chatHistory = [
-    { id: "1", title: "Introduction to Web Security" },
-    { id: "2", title: "Understanding XSS Attacks" },
-    { id: "3", title: "SQL Injection Prevention Tips" },
-    { id: "4", title: "Analyzing HTTPS Implementation" },
-    { id: "5", title: "Exploring OWASP Top 10" },
-    { id: "6", title: "Mitigating CSRF Attacks" },
-    { id: "7", title: "Secure Cookie Practices" },
-    { id: "8", title: "Understanding Clickjacking" },
-    { id: "9", title: "Implementing Content Security Policy" },
-    { id: "10", title: "Detecting Security Misconfigurations" },
-    { id: "11", title: "Preventing Directory Traversal" },
-    { id: "12", title: "Analyzing API Security" },
-    { id: "13", title: "Exploring Authentication Mechanisms" },
-    { id: "14", title: "Securing File Uploads" },
-    { id: "15", title: "Understanding Security Tokens" },
-  ];
-
   const [selectedChatId, setSelectedChatId] = useState(null);
 
   function selectChat(id: string): void {
@@ -372,43 +339,14 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex">
       {/* Side Panel */}
-      <SidePanel chatHistory={chatHistory} selectedChatId={selectedChatId} selectChat={selectChat} />
+      <SidePanel
+        chatHistory={chatHistory}
+        selectedChatId={selectedChatId}
+        selectChat={selectChat}
+      />
 
       <main className="flex flex-col w-full h-screen  relative">
-        <header className="border-b border-gray-800 p-4">
-          <div className="container mx-auto flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center">
-                <Shield className="h-5 w-5 text-cyan-500 mr-2" />
-                <span className="font-bold">HackAware </span>{" "}
-                <span className="hidden lg:inline-block ms-1">
-                  {" "}
-                  Security Chat
-                </span>
-              </div>
-            </Link>
-            {user && (
-              <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-cyan-500 text-cyan-500"
-              >
-                {user?.expertise}
-              </Badge>
-              <Badge
-                variant="outline"
-                className="border-green-500 text-green-500"
-              >
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                Online
-              </Badge>
-            </div>
-            )}
-          </div>
-        </header>
+        <ChatHeader user={user} />
         {/* scrollable area */}
         <div
           ref={scrollRef}
@@ -417,122 +355,7 @@ export default function ChatPage() {
         >
           {messages.map((message) => (
             <div key={message.id}>
-              <ChatMessage message={message} isRendering={isRendering} />
-
-              {message.isScanning && (
-                <div className="ml-11 mt-2">
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 max-w-[80%]">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>🔍 Deep security analysis in progress...</span>
-                      <span>{message.scanProgress}%</span>
-                    </div>
-                    <Progress
-                      value={message.scanProgress || 0}
-                      className="h-2 bg-gray-700 mb-3"
-                    >
-                      <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full" />
-                    </Progress>
-                    <div className="text-xs text-gray-400 space-y-1">
-                      {(message.scanProgress || 0) > 15 && (
-                        <div>✓ Analyzing HTTP security headers</div>
-                      )}
-                      {(message.scanProgress || 0) > 30 && (
-                        <div>✓ Detecting third-party trackers</div>
-                      )}
-                      {(message.scanProgress || 0) > 45 && (
-                        <div>
-                          ✓ Scanning JavaScript libraries for vulnerabilities
-                        </div>
-                      )}
-                      {(message.scanProgress || 0) > 60 && (
-                        <div>✓ Checking SSL/TLS configuration</div>
-                      )}
-                      {(message.scanProgress || 0) > 75 && (
-                        <div>
-                          ✓ Analyzing privacy policies and consent mechanisms
-                        </div>
-                      )}
-                      {(message.scanProgress || 0) > 90 && (
-                        <div>✓ Generating security recommendations</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {message.scanResults && (
-                <div className="ml-11 mt-2">
-                  <ScanResults results={message.scanResults} />
-                </div>
-              )}
-
-              {message.threatAlert && (
-                <div className="ml-11 mt-2">
-                  <SecurityThreatAlert alert={message.threatAlert} />
-                </div>
-              )}
-
-              {message.interactiveDemo && (
-                <div className="ml-11 mt-2">
-                  <InteractiveDemo demo={message.interactiveDemo} />
-                </div>
-              )}
-
-              {message.quiz && (
-                <div className="ml-11 mt-2">
-                  <SecurityQuiz
-                    quiz={message.quiz}
-                    onNext={(isCorrect) => showNextQuiz(isCorrect)}
-                    showNext={
-                      currentQuizTopic !== null &&
-                      currentQuizIndex < quizQuestions.length - 1
-                    }
-                  />
-                </div>
-              )}
-
-              {message.codeExample && (
-                <div className="ml-11 mt-2">
-                  <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-4 max-w-[80%]">
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <Code className="h-4 w-4 text-cyan-500" />
-                      Code Examples
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-xs text-red-400 mb-1">
-                          ❌ Vulnerable Code:
-                        </div>
-                        <pre className="bg-red-500/10 border border-red-500/30 rounded p-2 text-xs overflow-x-auto">
-                          <code>{message.codeExample.vulnerable}</code>
-                        </pre>
-                      </div>
-                      <div>
-                        <div className="text-xs text-green-400 mb-1">
-                          ✅ Secure Code:
-                        </div>
-                        <pre className="bg-green-500/10 border border-green-500/30 rounded p-2 text-xs overflow-x-auto">
-                          <code>{message.codeExample.secure}</code>
-                        </pre>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {message.securityTip && (
-                <div className="ml-11 mt-2">
-                  <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 max-w-[80%]">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Lightbulb className="h-4 w-4 text-cyan-500" />
-                      {message.securityTip.title}
-                    </h4>
-                    <p className="text-sm text-gray-300">
-                      {message.securityTip.description}
-                    </p>
-                  </div>
-                </div>
-              )}
+              <MessageRenderer message={message} isRendering={isRendering} />
             </div>
           ))}
           {isTyping && <ChatTypingIndicator />}
@@ -540,197 +363,26 @@ export default function ChatPage() {
         </div>
 
         {/* Fixed input area */}
-        <div className="w-full max-w-4xl p-4 border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 lg:rounded-xl mx-auto lg:mb-4">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="mb-4">
-              <TabsTrigger value="text">General Chat</TabsTrigger>
-              <TabsTrigger value="url">URL Scan</TabsTrigger>
-              <TabsTrigger value="quiz">Security Quiz</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="text" className="mt-0">
-              <div ref={inputContainerRef} className="relative">
-                {showSuggestions && (
-                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
-                    {suggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => selectSuggestion(suggestion)}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-700 text-sm text-gray-300 border-b border-gray-700 last:border-b-0"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      filterSuggestions(e.target.value);
-
-                      // Auto-grow logic
-                      const el = textareaRef.current;
-                      if (el) {
-                        el.style.height = "auto"; // reset height
-                        el.style.height = el.scrollHeight + "px"; // expand to fit content
-                      }
-                    }}
-                    rows={1}
-                    placeholder="Ask about web security, vulnerabilities, best practices..."
-                    className="min-h-[60px] bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500 overflow-hidden resize-none"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        if (!isRendering) {
-                          handleSendMessage();
-                        }
-                      }
-                      if (e.key === "Escape") {
-                        setShowSuggestions(false);
-                      }
-                    }}
-                    onFocus={() => {
-                      if (input.length >= 2) {
-                        filterSuggestions(input);
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={isRendering ? handleStop : handleSendMessage}
-                    size="icon"
-                    className="bg-cyan-500 hover:bg-cyan-600 mt-auto p-2 h-fit disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isRendering ? (
-                      <PauseOctagon className="w-10 h-10" strokeWidth={2.25} />
-                    ) : (
-                      <Send className="w-10 h-10" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="url" className="mt-0">
-              <div className="space-y-4">
-                <div className="flex gap-2 w-full">
-                  <Input
-                    value={urlToScan}
-                    onChange={(e) => setUrlToScan(e.target.value)}
-                    placeholder="Enter website URL for security scan (e.g., https://example.com)"
-                    className="flex-1 bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        scanUrl();
-                      }
-                    }}
-                    disabled={isUrlScanning}
-                  />
-                  <Dialog
-                    open={showAnalysisModal}
-                    onOpenChange={setShowAnalysisModal}
-                  >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="border-gray-600 hover:bg-gray-700 bg-transparent"
-                      >
-                        <HelpCircle className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                          <Shield className="h-5 w-5 text-cyan-500" />
-                          What HackAware will analyze
-                        </DialogTitle>
-                        <DialogDescription>
-                          Comprehensive security and privacy analysis for any
-                          website
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-3 py-4">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-cyan-500/20 p-1.5 rounded-full">
-                            <Shield className="h-4 w-4 text-cyan-500" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-1">
-                              Security Headers & HTTPS
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              Analyze security headers, SSL/TLS configuration,
-                              and HTTPS implementation
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="bg-amber-500/20 p-1.5 rounded-full">
-                            <Eye className="h-4 w-4 text-amber-500" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-1">
-                              Privacy & Tracking
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              Detect third-party trackers, cookies, and privacy
-                              compliance issues
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="bg-red-500/20 p-1.5 rounded-full">
-                            <Code className="h-4 w-4 text-red-500" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-1">
-                              JavaScript Vulnerabilities
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              Scan for outdated libraries and known security
-                              vulnerabilities
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="bg-green-500/20 p-1.5 rounded-full">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-1">
-                              Security Best Practices
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              Check Content Security Policy, cookie security,
-                              and compliance standards
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Button
-                    className="bg-cyan-500 hover:bg-cyan-600"
-                    onClick={scanUrl}
-                    disabled={!urlToScan.trim() || isUrlScanning}
-                  >
-                    <Scan className="h-4 w-4 mr-1" />
-                    {isUrlScanning ? "Scanning..." : "Scan Now"}
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="quiz" className="mt-0"></TabsContent>
-          </Tabs>
-        </div>
+        <InputTabs
+          input={input}
+          setInput={setInput}
+          textareaRef={textareaRef}
+          inputContainerRef={inputContainerRef}
+          isRendering={isRendering}
+          handleSendMessage={handleSendMessage}
+          handleStop={handleStop}
+          suggestions={suggestions}
+          showSuggestions={showSuggestions}
+          setShowSuggestions={setShowSuggestions}
+          filterSuggestions={filterSuggestions}
+          selectSuggestion={selectSuggestion}
+          urlToScan={urlToScan}
+          setUrlToScan={setUrlToScan}
+          isUrlScanning={isUrlScanning}
+          scanUrl={scanUrl}
+          showAnalysisModal={showAnalysisModal}
+          setShowAnalysisModal={setShowAnalysisModal}
+        />
       </main>
     </div>
   );

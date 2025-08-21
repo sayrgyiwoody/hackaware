@@ -1,17 +1,9 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Shield, User } from "lucide-react"
-import { MarkdownRenderer } from "./markdown-renderer"
-import { MessageActions } from "./message-actions"
-import MessageTime from "./message-time"
-
-type MessageType = {
-  id: string
-  role: "user" | "bot"
-  content: string
-  timestamp: Date
-  icon?: string
-  status?: "normal" | "warning" | "danger" | "success"
-}
+import { MarkdownRenderer } from "../../../components/markdown-renderer"
+import { MessageActions } from "../../../components/message-actions"
+import MessageTime from "../../../components/message-time"
+import { MessageType } from "@/app/chat/types"
 
 interface ChatMessageProps {
   message: MessageType

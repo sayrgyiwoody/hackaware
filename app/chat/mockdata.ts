@@ -220,3 +220,21 @@ export const autoSuggestQueries = [
   "Explain DNS spoofing and prevention",
   "What are common cloud security risks?",
 ];
+
+export const chatHistory = [
+  { id: "1", title: "Introduction to Web Security" },
+  { id: "2", title: "Understanding XSS Attacks" },
+  { id: "3", title: "SQL Injection Prevention Tips" },
+  { id: "4", title: "Analyzing HTTPS Implementation" },
+  { id: "5", title: "Exploring OWASP Top 10" },
+  { id: "6", title: "Mitigating CSRF Attacks" },
+  { id: "7", title: "Secure Cookie Practices" },
+  { id: "8", title: "Understanding Clickjacking" },
+  { id: "9", title: "Implementing Content Security Policy" },
+  { id: "10", title: "Detecting Security Misconfigurations" },
+  { id: "11", title: "Preventing Directory Traversal" },
+  { id: "12", title: "Analyzing API Security" },
+  { id: "13", title: "Exploring Authentication Mechanisms" },
+  { id: "14", title: "Securing File Uploads" },
+  { id: "15", title: "Understanding Security Tokens" },
+];

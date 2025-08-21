@@ -110,7 +110,7 @@ export function MessageActions({ content, messageId, onRegenerate, onEdit }: Mes
 
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-1 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="flex items-center gap-1 mt-4 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8 w-8 p-0 hover:bg-gray-700">
