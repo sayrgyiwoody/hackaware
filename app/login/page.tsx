@@ -19,13 +19,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Shield, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { loginUser } from "@/lib/authService";
-import { useRouter, useSearchParams } from "next/navigation";
-// import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useMessage } from "@/context/MessageContext";
+import { toast } from "sonner";
 
 export default function LoginPage() {
-  // const searchParams = useSearchParams();
-  // const message = searchParams.get("message");
-  // const hasToastRef = useRef(false);
+  const { message, setMessage } = useMessage();
+  const hasToastRef = useRef(false);
 
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -37,12 +37,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // useEffect(() => {
-  //   if (message && !hasToastRef.current) {
-  //     toast.info(message);
-  //     hasToastRef.current = true;
-  //   }
-  // }, [message]);
+  useEffect(() => {
+    if (message && !hasToastRef.current) {
+      toast.info(message);
+      hasToastRef.current = true;
+      setMessage(null);
+    }
+  }, [message]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

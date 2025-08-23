@@ -35,14 +35,22 @@ import { useChatHistory } from "@/hooks/use-chat-history";
 import { useConversationMessages } from "@/hooks/use-conversation-messages";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
+import { useMessage } from "@/context/MessageContext";
 
 export default function ChatPage() {
   const { user, loading: userLoading, refetch } = useAuth();
   const router = useRouter();
+  const { setMessage } = useMessage();
+
+  useEffect(() => {
+    if (!user && !userLoading) {
+      setMessage("You need to login first");
+      router.push("/login");
+    }
+  }, [user, userLoading, router, setMessage]);
 
   if (!user) {
-    router.push(`/login?message=${encodeURIComponent("You need to login first")}`);
-    return null;
+    return null; // prevent rendering ChatPage until redirect happens
   }
 
   const {
