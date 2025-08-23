@@ -32,7 +32,7 @@ import { getToken } from "@/lib/authService";
 import { readStreamingJson } from "@/lib/utils";
 import { useChatHistory } from "@/hooks/use-chat-history";
 import { useConversationMessages } from "@/hooks/use-conversation-messages";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 
 export default function ChatPage() {
   const { user, loading: userLoading, refetch } = useAuth();
@@ -47,7 +47,7 @@ export default function ChatPage() {
   useEffect(() => {
     refetch(); // force refresh when entering chat page
   }, [refetch]);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string|null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   const {

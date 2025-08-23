@@ -18,6 +18,7 @@ import {
   SidebarMenuSkeleton,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -72,7 +73,6 @@ export default function SidePanel({
   selectChat: (id: string) => void;
   newChat: () => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false); // mobile toggle
   const auth = useAuth();
 
   const [isFetching, setIsFetching] = useState(true);
@@ -83,24 +83,22 @@ export default function SidePanel({
     }
   }, [chatHistory]);
 
-  // if (!isFetching && !auth.user) {
-  //   return null; // or handle unauthenticated state
-  // }
+const { setOpenMobile } = useSidebar();
 
-  const handleSelectChat = (chatId: string) => {
-    selectChat(chatId);
-    setIsOpen(false);
-  };
+const handleSelectChat = (chatId: string) => {
+  selectChat(chatId);
+  setOpenMobile(false);
+};
 
-  const handleNewChat = () => {
-    newChat();
-    setIsOpen(false);
-  };
+const handleNewChat = () => {
+  newChat();
+  setOpenMobile(false);
+};
 
   return (
     <Sidebar className="border-r">
       <SidebarHeader className="p-4">
-        <Link href='/' className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
             <Shield className="w-4 h-4 text-white" />
           </div>
@@ -114,7 +112,10 @@ export default function SidePanel({
 
       <SidebarContent>
         <div className="p-4">
-          <Button onClick={newChat} className="w-full justify-start gap-2">
+          <Button
+            onClick={handleNewChat}
+            className="w-full justify-start gap-2"
+          >
             <Plus className="w-4 h-4" />
             New Chat
           </Button>
@@ -132,7 +133,7 @@ export default function SidePanel({
               chatHistory.map((chat) => (
                 <SidebarMenuItem key={chat.id}>
                   <SidebarMenuButton
-                    onClick={() => selectChat(chat.id)}
+                    onClick={() => handleSelectChat(chat.id)}
                     isActive={selectedChatId === chat.id}
                     className="w-full justify-between group"
                   >
@@ -147,7 +148,7 @@ export default function SidePanel({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                          className="md:opacity-0 md:group-hover:opacity-100 h-6 w-6 p-0"
                         >
                           <MoreHorizontal className="w-3 h-3" />
                         </Button>
@@ -253,8 +254,10 @@ export default function SidePanel({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start gap-3 h-12">
               <Avatar className="w-8 h-8">
-                <AvatarImage src="/diverse-user-avatars.png" />
-                <AvatarFallback>{auth.user?.username[0] ||'JD'}</AvatarFallback>
+                {/* <AvatarImage src="/diverse-user-avatars.png" /> */}
+                <AvatarFallback>
+                  {auth.user?.username[0] || "JD"}
+                </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start min-w-0">
                 <span className="text-sm font-medium truncate">
@@ -285,7 +288,9 @@ export default function SidePanel({
                   <div className="flex items-center gap-4">
                     <Avatar className="w-16 h-16">
                       <AvatarImage src="/diverse-user-avatars.png" />
-                      <AvatarFallback>{auth.user?.username[0] ||'JD'}</AvatarFallback>
+                      <AvatarFallback>
+                        {auth.user?.username[0] || "JD"}
+                      </AvatarFallback>
                     </Avatar>
                     <Button variant="outline" size="sm">
                       Change Photo

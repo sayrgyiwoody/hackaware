@@ -9,6 +9,7 @@ export default function ChatHeader({
   user,
   chatHistory,
   selectedChatId,
+  
 }: {
   user: {
     username: string;
