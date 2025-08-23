@@ -448,8 +448,15 @@ export default function ChatPage() {
     <SidebarProvider>
       <div className="bg-gradient-to-b from-gray-900 to-gray-950 flex h-screen w-full">
         {/* Modal for login */}
-        <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-          <DialogContent>
+        <Dialog
+          open={showLoginModal}
+          onOpenChange={setShowLoginModal} // Prevent closing when clicking outside
+        >
+          <DialogContent
+            className="max-w-sm md:max-w-md w-full p-6"
+            onInteractOutside={(event) => event.preventDefault()}
+            onEscapeKeyDown={(event) => event.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Login Required</DialogTitle>
               <DialogDescription>
