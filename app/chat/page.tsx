@@ -50,15 +50,19 @@ export default function ChatPage() {
   const router = useRouter();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const hasCheckedLoginRef = useRef(false);
+  const prevUserRef = useRef(false);
 
-  // useEffect(() => {
-  //   // Only show modal once, after loading finishes
-  //   if (!userLoading && !user && !hasCheckedLoginRef.current) {
-  //     setShowLoginModal(true);
-  //     hasCheckedLoginRef.current = true;
-  //   }
-  // }, [user, userLoading]);
+  useEffect(() => {
+    // Only show modal if loading finished and there was no previous user
+    if (!userLoading && !user && prevUserRef.current === null) {
+      setShowLoginModal(true);
+    } else {
+      setShowLoginModal(false); // hide modal if user is logged in
+    }
+
+    // Update previous user
+    prevUserRef.current = user;
+  }, [user, userLoading]);
 
   const handleConfirmLogin = () => {
     setShowLoginModal(false);
@@ -70,7 +74,7 @@ export default function ChatPage() {
     loading: fetchingHistory,
     error,
     refetch: refetchChatHistory,
-    setChatHistory
+    setChatHistory,
   } = useChatHistory();
 
   useEffect(() => {
