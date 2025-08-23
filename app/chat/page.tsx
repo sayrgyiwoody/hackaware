@@ -406,6 +406,7 @@ export default function ChatPage() {
           selectedChatId={selectedChatId}
           selectChat={selectChat}
           newChat={newChat}
+          isFetching={fetchingHistory}
         />
 
         <main className="flex flex-col w-full h-screen  relative">

@@ -67,33 +67,27 @@ export default function SidePanel({
   selectedChatId,
   selectChat,
   newChat,
+  isFetching = true,
 }: {
   chatHistory: ChatConversation[];
   selectedChatId: string | null;
   selectChat: (id: string) => void;
   newChat: () => void;
+  isFetching: boolean;
 }) {
   const auth = useAuth();
 
-  const [isFetching, setIsFetching] = useState(true);
+  const { setOpenMobile } = useSidebar();
 
-  useEffect(() => {
-    if (chatHistory.length > 0) {
-      setIsFetching(false);
-    }
-  }, [chatHistory]);
+  const handleSelectChat = (chatId: string) => {
+    selectChat(chatId);
+    setOpenMobile(false);
+  };
 
-const { setOpenMobile } = useSidebar();
-
-const handleSelectChat = (chatId: string) => {
-  selectChat(chatId);
-  setOpenMobile(false);
-};
-
-const handleNewChat = () => {
-  newChat();
-  setOpenMobile(false);
-};
+  const handleNewChat = () => {
+    newChat();
+    setOpenMobile(false);
+  };
 
   return (
     <Sidebar className="border-r">

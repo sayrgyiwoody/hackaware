@@ -11,7 +11,7 @@ export interface ChatConversation {
 
 export const useChatHistory = () => {
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = async () => {
