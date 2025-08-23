@@ -47,7 +47,7 @@ export default function ChatPage() {
   useEffect(() => {
     refetch(); // force refresh when entering chat page
   }, [refetch]);
-  const [conversationId, setConversationId] = useState(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   const {

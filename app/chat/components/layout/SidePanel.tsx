@@ -15,6 +15,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
@@ -56,7 +57,9 @@ import {
   Download,
   MoreVertical,
   MoreHorizontal,
+  Shield,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function SidePanel({
   chatHistory,
@@ -97,16 +100,16 @@ export default function SidePanel({
   return (
     <Sidebar className="border-r">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-            <MessageSquare className="w-4 h-4 text-white" />
+        <Link href='/' className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+            <Shield className="w-4 h-4 text-white" />
           </div>
-          <span className="font-semibold">ChatGPT</span>
+          <span className="font-semibold">HackAware</span>
           <Badge variant="secondary" className="ml-auto">
             <Crown className="w-3 h-3 mr-1" />
             Plus
           </Badge>
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
@@ -119,111 +122,127 @@ export default function SidePanel({
 
         <ScrollArea className="flex-1 px-4">
           <SidebarMenu>
-            {chatHistory.map((chat) => (
-              <SidebarMenuItem key={chat.id}>
-                <SidebarMenuButton
-                  onClick={() => selectChat(chat.id)}
-                  isActive={selectedChatId === chat.id}
-                  className="w-full justify-between group"
-                >
-                  
+            {isFetching ? (
+              <ChatHistorySkeleton />
+            ) : chatHistory.length === 0 ? (
+              <p className="p-4 text-sm text-muted-foreground">
+                No chat history to show.
+              </p>
+            ) : (
+              chatHistory.map((chat) => (
+                <SidebarMenuItem key={chat.id}>
+                  <SidebarMenuButton
+                    onClick={() => selectChat(chat.id)}
+                    isActive={selectedChatId === chat.id}
+                    className="w-full justify-between group"
+                  >
                     <span className="flex-1 truncate">
-                      {chat.title.length > 22 ? `${chat.title.slice(0, 22)}...` : chat.title}
+                      {chat.title.length > 22
+                        ? `${chat.title.slice(0, 22)}...`
+                        : chat.title}
                     </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-                      >
-                        <MoreHorizontal className="w-3 h-3" />
-                      
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <Edit3 className="w-4 h-4 mr-2" />
-                            Rename
-                          </DropdownMenuItem>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Rename Chat</DialogTitle>
-                            <DialogDescription>
-                              Give this conversation a new name.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="py-4">
-                            <Label htmlFor="chat-name">Chat Name</Label>
-                            <Input
-                              id="chat-name"
-                              defaultValue={chat.title}
-                              className="mt-2"
-                            />
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline">Cancel</Button>
-                            <Button>Save</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
 
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <Share className="w-4 h-4 mr-2" />
-                            Share
-                          </DropdownMenuItem>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Share Chat</DialogTitle>
-                            <DialogDescription>
-                              Share this conversation with others via a public
-                              link.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="py-4 space-y-4">
-                            <div className="flex items-center space-x-2">
-                              <Switch id="share-mode" />
-                              <Label htmlFor="share-mode">
-                                Make conversation public
-                              </Label>
-                            </div>
-                            <div className="p-3 bg-muted rounded-lg">
-                              <code className="text-sm">
-                                https://chat.openai.com/share/abc123...
-                              </code>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline">Cancel</Button>
-                            <Button>Copy Link</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                        >
+                          <MoreHorizontal className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
 
-                      <DropdownMenuItem>
-                        <Download className="w-4 h-4 mr-2" />
-                        Export
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+                      <DropdownMenuContent align="end">
+                        {/* Rename Dialog */}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Edit3 className="w-4 h-4 mr-2" />
+                              Rename
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Rename Chat</DialogTitle>
+                              <DialogDescription>
+                                Give this conversation a new name.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                              <Label htmlFor="chat-name">Chat Name</Label>
+                              <Input
+                                id="chat-name"
+                                defaultValue={chat.title}
+                                className="mt-2"
+                              />
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline">Cancel</Button>
+                              <Button>Save</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Share Dialog */}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Share className="w-4 h-4 mr-2" />
+                              Share
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Share Chat</DialogTitle>
+                              <DialogDescription>
+                                Share this conversation with others via a public
+                                link.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4 space-y-4">
+                              <div className="flex items-center space-x-2">
+                                <Switch id="share-mode" />
+                                <Label htmlFor="share-mode">
+                                  Make conversation public
+                                </Label>
+                              </div>
+                              <div className="p-3 bg-muted rounded-lg">
+                                <code className="text-sm">
+                                  https://chat.openai.com/share/abc123...
+                                </code>
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline">Cancel</Button>
+                              <Button>Copy Link</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Export */}
+                        <DropdownMenuItem>
+                          <Download className="w-4 h-4 mr-2" />
+                          Export
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        {/* Delete */}
+                        <DropdownMenuItem className="text-red-600">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))
+            )}
           </SidebarMenu>
         </ScrollArea>
       </SidebarContent>
@@ -235,12 +254,14 @@ export default function SidePanel({
             <Button variant="ghost" className="w-full justify-start gap-3 h-12">
               <Avatar className="w-8 h-8">
                 <AvatarImage src="/diverse-user-avatars.png" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>{auth.user?.username[0] ||'JD'}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-sm font-medium truncate">John Doe</span>
+                <span className="text-sm font-medium truncate">
+                  {auth.user?.username || "John Doe"}
+                </span>
                 <span className="text-xs text-muted-foreground">
-                  john@example.com
+                  {auth.user?.email || "john@example.com"}
                 </span>
               </div>
             </Button>
@@ -264,7 +285,7 @@ export default function SidePanel({
                   <div className="flex items-center gap-4">
                     <Avatar className="w-16 h-16">
                       <AvatarImage src="/diverse-user-avatars.png" />
-                      <AvatarFallback>JD</AvatarFallback>
+                      <AvatarFallback>{auth.user?.username[0] ||'JD'}</AvatarFallback>
                     </Avatar>
                     <Button variant="outline" size="sm">
                       Change Photo
@@ -272,11 +293,19 @@ export default function SidePanel({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue="John Doe" />
+                    <Input
+                      id="name"
+                      value={auth.user?.username}
+                      defaultValue="John Doe"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" defaultValue="john@example.com" />
+                    <Input
+                      id="email"
+                      value={auth.user?.email}
+                      defaultValue="john@example.com"
+                    />
                   </div>
                 </div>
                 <DialogFooter>
@@ -297,7 +326,7 @@ export default function SidePanel({
                 <DialogHeader>
                   <DialogTitle>Settings</DialogTitle>
                   <DialogDescription>
-                    Customize your ChatGPT experience.
+                    Customize your HackAware experience.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-6">
@@ -370,7 +399,7 @@ export default function SidePanel({
                 <div className="py-4 space-y-4">
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">ChatGPT Plus</span>
+                      <span className="font-medium">HackAware Plus</span>
                       <Badge>Active</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-3">
@@ -411,7 +440,7 @@ export default function SidePanel({
                 <DialogHeader>
                   <DialogTitle>Help & Support</DialogTitle>
                   <DialogDescription>
-                    Get help with ChatGPT or contact our support team.
+                    Get help with HackAware or contact our support team.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
@@ -448,7 +477,7 @@ export default function SidePanel({
             </Dialog>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-red-600">
               <LogOut className="w-4 h-4 mr-2" />
               Log Out
             </DropdownMenuItem>
