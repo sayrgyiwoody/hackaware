@@ -17,6 +17,7 @@ import {
   OctagonMinus,
   CircleSlash2,
   PauseOctagon,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { ChatTypingIndicator } from "@/components/chat-typing-indicator";
@@ -437,6 +438,15 @@ export default function ChatPage() {
                 <div ref={messagesEndRef} />
               </>
             )}
+
+            {!isUserAtBottom && 
+            <button
+              onClick={()=>scrollToBottom()}
+              className="fixed bottom-4 right-4 z-50 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center animate-bounce"
+            >
+              <ChevronDown size={24} />
+              </button>
+            }
           </div>
 
           {/* Fixed input area */}
