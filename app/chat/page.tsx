@@ -395,6 +395,7 @@ export default function ChatPage() {
     if (messages.length === 0) {
       return;
     }
+    setSelectedChatId(null);
     setMessages([]);
   };
 
