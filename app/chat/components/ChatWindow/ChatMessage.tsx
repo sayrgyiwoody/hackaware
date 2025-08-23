@@ -1,8 +1,8 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Shield, User } from "lucide-react"
-import { MarkdownRenderer } from "../../../components/markdown-renderer"
-import { MessageActions } from "../../../components/message-actions"
-import MessageTime from "../../../components/message-time"
+import { MarkdownRenderer } from "../../../../components/markdown-renderer"
+import { MessageActions } from "../../../../components/message-actions"
+import MessageTime from "../../../../components/message-time"
 import { MessageType } from "@/app/chat/types"
 
 interface ChatMessageProps {
@@ -13,7 +13,7 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ message, onRegenerate, onEdit, isRendering }: ChatMessageProps) {
-  const isBot = message.role === "bot"
+  const isBot = message.role === "assistant"
 
   if (!message || !message.content) {
     return null; // Don't render anything if message is empty
@@ -33,7 +33,7 @@ export function ChatMessage({ message, onRegenerate, onEdit, isRendering }: Chat
         <div className={`flex-1 min-w-0 ${isBot ? "" : "flex flex-col items-end"}`}>
           <div className={`flex items-center gap-2 mb-2 ${isBot ? "" : "flex-row-reverse"}`}>
             <span className="font-semibold text-white">{isBot ? "HackAware" : "You"}</span>
-            <MessageTime timestamp={message.timestamp} />
+            <MessageTime datetime={message.datetime} />
           </div>
 
           <div className={`${isBot ? "max-w-none" : "max-w-[80%]"}`}>

@@ -1,8 +1,8 @@
 export type MessageType = {
   id: string;
-  role: "user" | "bot";
+  role: "user" | "assistant";
   content: string;
-  timestamp: Date;
+  datetime: Date;
   icon?: string;
   status?: "normal" | "warning" | "danger" | "success" | "info";
   scanResults?: any;

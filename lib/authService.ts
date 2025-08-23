@@ -34,6 +34,10 @@ export function getToken() {
     return localStorage.getItem("access_token");
 }
 
+export function clearToken() {
+  localStorage.removeItem("access_token");
+}
+
 export function logoutUser() {
   if (typeof window !== "undefined") {
     localStorage.removeItem("access_token");
@@ -44,8 +48,10 @@ export function logoutUser() {
  * Fetch current user info using /auth/me endpoint
  */
 export async function fetchMe() {
-      const token = getToken();
-  if (!token) throw new Error("No token found");
+  const token = getToken();
+  if (!token) {
+    return null; // no token → no user
+  }
 
   const res = await fetch(`${API_URL}/users/me`, {
     method: "POST",
@@ -55,6 +61,11 @@ export async function fetchMe() {
     },
   });
 
-  if (!res.ok) throw new Error("Failed to fetch user");
+  if (!res.ok) {
+    clearToken(); // remove invalid/expired token
+    return null; // return null instead of throwing
+  }
+
   return res.json(); // should return user data
 }
+

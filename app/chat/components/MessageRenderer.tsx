@@ -1,4 +1,4 @@
-import { ChatMessage } from "@/app/chat/components/ChatMessage";
+import { ChatMessage } from "@/app/chat/components/ChatWindow/ChatMessage";
 import { InteractiveDemo } from "@/components/interactive-demo";
 import { ScanResults } from "@/components/scan-results";
 import { SecurityQuiz } from "@/components/security-quiz";

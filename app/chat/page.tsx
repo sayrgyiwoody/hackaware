@@ -20,22 +20,42 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ChatTypingIndicator } from "@/components/chat-typing-indicator";
-import {
-  autoSuggestQueries,
-  chatHistory,
-  welcomeMessage,
-} from "./mockdata";
+import { autoSuggestQueries, welcomeMessage } from "./mockdata";
 import { MessageType } from "./types";
 import { useAuth } from "@/context/AuthContext";
 import SidePanel from "./components/layout/SidePanel";
 import MessageRenderer from "./components/MessageRenderer";
-import InputTabs from "./components/InputTabs";
-import ChatHeader from "./components/ChatHeader";
+import InputTabs from "./components/ChatWindow/InputTabs";
+import ChatHeader from "./components/ChatWindow/ChatHeader";
+import WelcomeMessage from "./components/ChatWindow/WelcomeMessage";
+import { getToken } from "@/lib/authService";
+import { readStreamingJson } from "@/lib/utils";
+import { useChatHistory } from "@/hooks/use-chat-history";
+import { useConversationMessages } from "@/hooks/use-conversation-messages";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 export default function ChatPage() {
-  const { user } = useAuth();
+  const { user, loading: userLoading, refetch } = useAuth();
 
-  const [messages, setMessages] = useState<MessageType[]>(welcomeMessage);
+  const {
+    conversations: chatHistory,
+    loading: fetchingHistory,
+    error,
+    refetch: refetchChatHistory,
+  } = useChatHistory();
+
+  useEffect(() => {
+    refetch(); // force refresh when entering chat page
+  }, [refetch]);
+  const [conversationId, setConversationId] = useState(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+
+  const {
+    messages,
+    setMessages,
+    refetch: refetchConversationMessages,
+  } = useConversationMessages(selectedChatId);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [input, setInput] = useState("");
@@ -90,111 +110,146 @@ export default function ChatPage() {
     return match ? match[0] : null;
   };
 
-  // streaming response
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
-
-    // hide suggestion
-    setShowSuggestions(false);
-
-    // Reset stop flag before starting
-    stopRef.current = false;
-
-    // Add user message
-    const userMessage: MessageType = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
-    setIsTyping(true);
-    setIsRendering(true);
-
+  const createChat = async () => {
     try {
-      const response = await fetch(`${API_URL}/chat`, {
+      const token = getToken();
+      const response = await fetch(`${API_URL}/chat/new`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ question: input }),
         signal,
       });
 
-      if (!response.body) throw new Error("ReadableStream not supported");
+      if (!response.body) throw new Error("No response body");
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
+      // Initial bot message
       let botText = "";
+      let lastChunk: any = null;
 
       const botMessage: MessageType = {
         id: (Date.now() + 1).toString(),
-        role: "bot",
+        role: "assistant",
         content: "",
-        timestamp: new Date(),
-        // interactiveDemo: generateSecurityDemo(demoTopic),
+        datetime: new Date(),
         status: "info",
       };
 
-      // Add initial bot message to chat
       setMessages((prev) => [...prev, botMessage]);
 
-      let buffer = "";
+      // Stream chunks and update message progressively
+      await readStreamingJson(
+        response,
+        (parsed) => {
+          lastChunk = parsed; // store last parsed chunk
+          const content = parsed.message?.content || "";
+          const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
+          botText += cleaned;
 
-      while (true) {
-        if (stopRef.current) {
-          controller.abort(); // abort fetch
-          botText += "... stopped";
+          setIsTyping(false);
+
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === botMessage.id ? { ...msg, content: botText } : msg
             )
           );
-          break;
-        }
+        },
+        stopRef
+      );
 
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-
-          try {
-            const parsed = JSON.parse(line);
-            const content = parsed.message?.content || "";
-            const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
-            botText += cleaned;
-
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === botMessage.id ? { ...msg, content: botText } : msg
-              )
-            );
-
-            if (botText.trim() !== "") setIsTyping(false);
-          } catch (e) {
-            console.warn("Could not parse line as JSON:", line);
-          }
-        }
-      }
+      // Get conversation_id from the last parsed chunk
+      const conversation_id = lastChunk?.conversation_id;
+      setConversationId(conversation_id);
     } catch (error: any) {
-      console.error("Error streaming response:", error?.message || error);
-    } finally {
-      setIsTyping(false);
+      console.error("Error creating chat:", error?.message || error);
+    }
+  };
+
+  // Sends a user message in an existing conversation
+  const sendMessage = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `${API_URL}/chat/conversation/${conversationId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ question: input }),
+          signal,
+        }
+      );
+
+      if (!response.body) throw new Error("ReadableStream not supported");
+
+      let botText = "";
+      const botMessage: MessageType = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "",
+        datetime: new Date(),
+        status: "info",
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+
+      await readStreamingJson(
+        response,
+        (parsed) => {
+          const content = parsed.message?.content || "";
+          const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
+          botText += cleaned;
+
+          setIsTyping(false);
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMessage.id ? { ...msg, content: botText } : msg
+            )
+          );
+
+          if (botText.trim() !== "") setIsTyping(false);
+        },
+        stopRef
+      );
+    } catch (error: any) {
+      console.error("Error sending message:", error?.message || error);
+    }
+  };
+
+  // Handles user message submission
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
+
+    setShowSuggestions(false);
+    stopRef.current = false;
+
+    // Add user message to chat
+    const userMessage: MessageType = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input,
+      datetime: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+
+    setIsTyping(true);
+    setIsRendering(true);
+
+    // Decide whether to create a new chat or send in existing conversation
+    if (messages.length === 0) {
+      await createChat(); // first message
+    } else {
+      await sendMessage(); // subsequent messages
     }
 
+    setIsTyping(false);
     setIsRendering(false);
   };
 
@@ -217,9 +272,9 @@ export default function ChatPage() {
     const scanMessageId = Date.now().toString();
     const scanMessage: MessageType = {
       id: scanMessageId,
-      role: "bot",
+      role: "assistant",
       content: `🔍 **Initiating comprehensive security scan of ${urlToScan}**\n\nScanning for vulnerabilities, privacy issues, and security misconfigurations...`,
-      timestamp: new Date(),
+      datetime: new Date(),
       icon: "🛡️",
       isScanning: true,
       scanProgress: 0,
@@ -330,60 +385,82 @@ export default function ChatPage() {
     }
   }, [messages, isUserAtBottom]);
 
-  const [selectedChatId, setSelectedChatId] = useState(null);
-
   function selectChat(id: string): void {
     setSelectedChatId(id);
+    setConversationId(id);
   }
 
+  const newChat = () => {
+    if (messages.length === 0) {
+      return;
+    }
+    setMessages([]);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex">
-      {/* Side Panel */}
-      <SidePanel
-        chatHistory={chatHistory}
-        selectedChatId={selectedChatId}
-        selectChat={selectChat}
-      />
-
-      <main className="flex flex-col w-full h-screen  relative">
-        <ChatHeader user={user} />
-        {/* scrollable area */}
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto scrollbar-none lg:p-4 space-y-4 min-h-0 container mx-auto max-w-5xl"
-        >
-          {messages.map((message) => (
-            <div key={message.id}>
-              <MessageRenderer message={message} isRendering={isRendering} />
-            </div>
-          ))}
-          {isTyping && <ChatTypingIndicator />}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Fixed input area */}
-        <InputTabs
-          input={input}
-          setInput={setInput}
-          textareaRef={textareaRef}
-          inputContainerRef={inputContainerRef}
-          isRendering={isRendering}
-          handleSendMessage={handleSendMessage}
-          handleStop={handleStop}
-          suggestions={suggestions}
-          showSuggestions={showSuggestions}
-          setShowSuggestions={setShowSuggestions}
-          filterSuggestions={filterSuggestions}
-          selectSuggestion={selectSuggestion}
-          urlToScan={urlToScan}
-          setUrlToScan={setUrlToScan}
-          isUrlScanning={isUrlScanning}
-          scanUrl={scanUrl}
-          showAnalysisModal={showAnalysisModal}
-          setShowAnalysisModal={setShowAnalysisModal}
+    <SidebarProvider>
+      <div className="bg-gradient-to-b from-gray-900 to-gray-950 flex h-screen w-full">
+        {/* Side Panel */}
+        <SidePanel
+          chatHistory={chatHistory}
+          selectedChatId={selectedChatId}
+          selectChat={selectChat}
+          newChat={newChat}
         />
-      </main>
-    </div>
+
+        <main className="flex flex-col w-full h-screen  relative">
+          <ChatHeader
+            user={user}
+            chatHistory={chatHistory}
+            selectedChatId={selectedChatId}
+          />
+          {/* scrollable area */}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto scrollbar-none lg:p-4 space-y-4 min-h-0 container mx-auto max-w-5xl"
+          >
+            {messages.length === 0 ? (
+              <WelcomeMessage />
+            ) : (
+              <>
+                {messages?.map((message, index) => (
+                  <div key={index}>
+                    <MessageRenderer
+                      message={message}
+                      isRendering={isRendering}
+                    />
+                  </div>
+                ))}
+                {isTyping && <ChatTypingIndicator />}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+
+          {/* Fixed input area */}
+          <InputTabs
+            input={input}
+            setInput={setInput}
+            textareaRef={textareaRef}
+            inputContainerRef={inputContainerRef}
+            isRendering={isRendering}
+            handleSendMessage={handleSendMessage}
+            handleStop={handleStop}
+            suggestions={suggestions}
+            showSuggestions={showSuggestions}
+            setShowSuggestions={setShowSuggestions}
+            filterSuggestions={filterSuggestions}
+            selectSuggestion={selectSuggestion}
+            urlToScan={urlToScan}
+            setUrlToScan={setUrlToScan}
+            isUrlScanning={isUrlScanning}
+            scanUrl={scanUrl}
+            showAnalysisModal={showAnalysisModal}
+            setShowAnalysisModal={setShowAnalysisModal}
+          />
+        </main>
+      </div>
+    </SidebarProvider>
   );
 }
