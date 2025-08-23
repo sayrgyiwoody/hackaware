@@ -20,7 +20,7 @@ interface AuthContextType {
   } | null;
   loading: boolean;
   logout: () => void;
-  refetch: () => Promise<void>; // 👈 added
+  refetch: () => Promise<void>; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await fetchMe();
       setUser(data);
     } catch (err) {
+      router.push("/login");
       console.error(err);
       setUser(null);
     } finally {

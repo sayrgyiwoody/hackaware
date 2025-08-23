@@ -11,6 +11,8 @@ export const useConversationMessages = (conversationId: string | null) => {
   const fetchMessages = async (id: string) => {
     setLoading(true);
     try {
+      console.log("chat messages fetching");
+
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
       const token = getToken();
       const res = await fetch(`${API_URL}/conversations/get/history/${id}`, {
@@ -20,7 +22,8 @@ export const useConversationMessages = (conversationId: string | null) => {
           Authorization: `Bearer ${token}`,
         },
       });
-        const data: MessageType[] = await res.json();
+      const data: MessageType[] = await res.json();
+      console.log('messages', data);
       setMessages(data.conversation);
     } catch (err: any) {
       console.error(err);

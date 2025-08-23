@@ -19,15 +19,16 @@ export const useChatHistory = () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
       const token = getToken();
-        const res = await fetch(`${API_URL}/conversations/get`, {
+      const res = await fetch(`${API_URL}/conversations/get`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-        const data: ChatConversation[] = await res.json();
-      setConversations(data);
+
+      const data: ChatConversation[] = await res.json();
+      setConversations(data || []);
     } catch (err: any) {
       console.error(err);
       setError(err?.message || "Failed to fetch chat history");
@@ -40,5 +41,16 @@ export const useChatHistory = () => {
     fetchHistory();
   }, []);
 
-  return { conversations, loading, error, refetch: fetchHistory };
+  // Add this to allow external components to update chat history
+  const setChatHistory = (newHistory: ChatConversation[]) => {
+    setConversations(newHistory);
+  };
+
+  return {
+    conversations,
+    loading,
+    error,
+    refetch: fetchHistory,
+    setChatHistory,
+  };
 };

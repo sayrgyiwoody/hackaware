@@ -24,7 +24,7 @@ import { ChatTypingIndicator } from "@/components/chat-typing-indicator";
 import { autoSuggestQueries, welcomeMessage } from "./mockdata";
 import { MessageType } from "./types";
 import { useAuth } from "@/context/AuthContext";
-import SidePanel from "./components/layout/SidePanel";
+import SidePanel from "./components/Panel/SidePanel";
 import MessageRenderer from "./components/MessageRenderer";
 import InputTabs from "./components/ChatWindow/InputTabs";
 import ChatHeader from "./components/ChatWindow/ChatHeader";
@@ -36,28 +36,41 @@ import { useConversationMessages } from "@/hooks/use-conversation-messages";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
 import { useMessage } from "@/context/MessageContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function ChatPage() {
   const { user, loading: userLoading, refetch } = useAuth();
   const router = useRouter();
-  const { setMessage } = useMessage();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
-  useEffect(() => {
-    if (!user && !userLoading) {
-      setMessage("You need to login first");
-      router.push("/login");
-    }
-  }, [user, userLoading, router, setMessage]);
+  const hasCheckedLoginRef = useRef(false);
 
-  if (!user) {
-    return null; // prevent rendering ChatPage until redirect happens
-  }
+  // useEffect(() => {
+  //   // Only show modal once, after loading finishes
+  //   if (!userLoading && !user && !hasCheckedLoginRef.current) {
+  //     setShowLoginModal(true);
+  //     hasCheckedLoginRef.current = true;
+  //   }
+  // }, [user, userLoading]);
+
+  const handleConfirmLogin = () => {
+    setShowLoginModal(false);
+    router.push("/login");
+  };
 
   const {
     conversations: chatHistory,
     loading: fetchingHistory,
     error,
     refetch: refetchChatHistory,
+    setChatHistory
   } = useChatHistory();
 
   useEffect(() => {
@@ -178,6 +191,19 @@ export default function ChatPage() {
       // Get conversation_id from the last parsed chunk
       const conversation_id = lastChunk?.conversation_id;
       setConversationId(conversation_id);
+      const conversation_title = lastChunk?.title || "New Chat";
+
+      setSelectedChatId(conversation_id);
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          user_id: user?.id || 0,
+          title: conversation_title,
+          id: conversation_id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ]);
     } catch (error: any) {
       console.error("Error creating chat:", error?.message || error);
     }
@@ -417,9 +443,30 @@ export default function ChatPage() {
   return (
     <SidebarProvider>
       <div className="bg-gradient-to-b from-gray-900 to-gray-950 flex h-screen w-full">
+        {/* Modal for login */}
+        <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Login Required</DialogTitle>
+              <DialogDescription>
+                You need to login first to access this page.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowLoginModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmLogin}>Go to Login</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         {/* Side Panel */}
         <SidePanel
           chatHistory={chatHistory}
+          setChatHistory={setChatHistory}
           selectedChatId={selectedChatId}
           selectChat={selectChat}
           newChat={newChat}

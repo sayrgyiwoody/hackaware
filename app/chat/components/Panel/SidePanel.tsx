@@ -61,15 +61,18 @@ import {
   Shield,
 } from "lucide-react";
 import Link from "next/link";
+import { getToken } from "@/lib/authService";
 
 export default function SidePanel({
   chatHistory,
+  setChatHistory,
   selectedChatId,
   selectChat,
   newChat,
   isFetching = true,
 }: {
   chatHistory: ChatConversation[];
+  setChatHistory: (history: ChatConversation[]) => void;
   selectedChatId: string | null;
   selectChat: (id: string) => void;
   newChat: () => void;
@@ -77,9 +80,9 @@ export default function SidePanel({
 }) {
   const auth = useAuth();
 
-  if (!auth.user) {
-    return null;
-  }
+  // if (!auth.user) {
+  //   return null;
+  // }
 
   const { setOpenMobile } = useSidebar();
 
@@ -91,6 +94,51 @@ export default function SidePanel({
   const handleNewChat = () => {
     newChat();
     setOpenMobile(false);
+  };
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  const [openRenameDialogId, setOpenRenameDialogId] = useState<string | null>(
+    null
+  );
+  const [renameValues, setRenameValues] = useState<Record<string, string>>({});
+
+  const renameChat = async (chatId: string, newTitle: string) => {
+    console.log("conversation_id,new title", chatId, newTitle);
+    try {
+      const token = getToken();
+      console.log("rename request");
+      const response = await fetch(
+        `${API_URL}/conversations/put/${chatId}?title=${encodeURIComponent(
+          newTitle
+        )}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ conversation_id: chatId, newTitle }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to update conversation");
+      }
+
+      const data = await response.json();
+      setRenameValues((prev) => ({
+        ...prev,
+        [chatId]: data.title,
+      }));
+      // Update chat history with new title
+      setChatHistory((prev) =>
+        prev.map((chat) =>
+          chat.id === chatId ? { ...chat, title: data.title } : chat
+        )
+      );
+    } catch (error: any) {
+      console.error("Error rename chat:", error?.message || error);
+    }
   };
 
   return (
@@ -121,7 +169,11 @@ export default function SidePanel({
 
         <ScrollArea className="flex-1 px-4">
           <SidebarMenu>
-            {isFetching ? (
+            {!auth.user ? (
+              // If no user → show skeleton only
+              <ChatHistorySkeleton />
+            ) : isFetching ? (
+              // If fetching → show skeleton
               <ChatHistorySkeleton />
             ) : chatHistory.length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">
@@ -143,26 +195,32 @@ export default function SidePanel({
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="md:opacity-0 md:group-hover:opacity-100 h-6 w-6 p-0"
+                        <span
+                          className="inline-flex justify-center items-center md:opacity-0 md:group-hover:opacity-100 h-6 w-6 p-0"
+                          onClick={(e) => e.stopPropagation()} // prevent row click
                         >
-                          <MoreHorizontal className="w-3 h-3" />
-                        </Button>
+                          <MoreHorizontal className="w-4 h-4" />
+                        </span>
                       </DropdownMenuTrigger>
 
                       <DropdownMenuContent align="end">
                         {/* Rename Dialog */}
-                        <Dialog>
+                        <Dialog
+                          open={openRenameDialogId === chat.id}
+                          onOpenChange={(isOpen) =>
+                            setOpenRenameDialogId(isOpen ? chat.id : null)
+                          }
+                        >
                           <DialogTrigger asChild>
                             <DropdownMenuItem
+                              onClick={(e) => e.stopPropagation()}
                               onSelect={(e) => e.preventDefault()}
                             >
                               <Edit3 className="w-4 h-4 mr-2" />
                               Rename
                             </DropdownMenuItem>
                           </DialogTrigger>
+
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>Rename Chat</DialogTitle>
@@ -170,17 +228,54 @@ export default function SidePanel({
                                 Give this conversation a new name.
                               </DialogDescription>
                             </DialogHeader>
+
                             <div className="py-4">
-                              <Label htmlFor="chat-name">Chat Name</Label>
+                              <Label htmlFor={`chat-name-${chat.id}`}>
+                              Chat Name
+                              </Label>
                               <Input
-                                id="chat-name"
-                                defaultValue={chat.title}
-                                className="mt-2"
+                              id={`chat-name-${chat.id}`}
+                              value={renameValues[chat.id] ?? chat.title}
+                              onChange={(e) =>
+                                setRenameValues((prev) => ({
+                                ...prev,
+                                [chat.id]: e.target.value,
+                                }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                e.preventDefault();
+                                renameChat(
+                                  chat.id,
+                                  renameValues[chat.id] ?? chat.title
+                                );
+                                setOpenRenameDialogId(null);
+                                }
+                              }}
+                              className="mt-2"
                               />
                             </div>
+
                             <DialogFooter>
-                              <Button variant="outline">Cancel</Button>
-                              <Button>Save</Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => setOpenRenameDialogId(null)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  renameChat(
+                                    chat.id,
+                                    renameValues[chat.id] ?? chat.title
+                                  );
+                                  setOpenRenameDialogId(null);
+                                }}
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                Save
+                              </Button>
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
@@ -189,6 +284,7 @@ export default function SidePanel({
                         <Dialog>
                           <DialogTrigger asChild>
                             <DropdownMenuItem
+                              onClick={(e) => e.stopPropagation()}
                               onSelect={(e) => e.preventDefault()}
                             >
                               <Share className="w-4 h-4 mr-2" />
@@ -224,7 +320,7 @@ export default function SidePanel({
                         </Dialog>
 
                         {/* Export */}
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                           <Download className="w-4 h-4 mr-2" />
                           Export
                         </DropdownMenuItem>
@@ -232,7 +328,10 @@ export default function SidePanel({
                         <DropdownMenuSeparator />
 
                         {/* Delete */}
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
@@ -253,10 +352,7 @@ export default function SidePanel({
         <SidebarFooter className="p-4 border-t">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 h-12"
-              >
+              <div className="w-full flex justify-start gap-3 h-12 cursor-pointer items-center">
                 <Avatar className="w-8 h-8">
                   {/* <AvatarImage src="/diverse-user-avatars.png" /> */}
                   <AvatarFallback>
@@ -271,12 +367,16 @@ export default function SidePanel({
                     {auth.user?.email || "john@example.com"}
                   </span>
                 </div>
-              </Button>
+              </div>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent align="start" className="w-64">
               <Dialog>
                 <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <DropdownMenuItem
+                    onClick={(e) => e.stopPropagation()}
+                    onSelect={(e) => e.preventDefault()}
+                  >
                     <User className="w-4 h-4 mr-2" />
                     My Profile
                   </DropdownMenuItem>
@@ -326,7 +426,10 @@ export default function SidePanel({
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <DropdownMenuItem
+                    onClick={(e) => e.stopPropagation()}
+                    onSelect={(e) => e.preventDefault()}
+                  >
                     <Settings className="w-4 h-4 mr-2" />
                     Settings
                   </DropdownMenuItem>
@@ -393,7 +496,10 @@ export default function SidePanel({
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <DropdownMenuItem
+                    onClick={(e) => e.stopPropagation()}
+                    onSelect={(e) => e.preventDefault()}
+                  >
                     <CreditCard className="w-4 h-4 mr-2" />
                     Billing
                   </DropdownMenuItem>
@@ -440,7 +546,10 @@ export default function SidePanel({
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <DropdownMenuItem
+                    onClick={(e) => e.stopPropagation()}
+                    onSelect={(e) => e.preventDefault()}
+                  >
                     <HelpCircle className="w-4 h-4 mr-2" />
                     Help & Support
                   </DropdownMenuItem>
