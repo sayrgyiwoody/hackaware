@@ -34,9 +34,16 @@ import { readStreamingJson } from "@/lib/utils";
 import { useChatHistory } from "@/hooks/use-chat-history";
 import { useConversationMessages } from "@/hooks/use-conversation-messages";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { useRouter } from "next/navigation";
 
 export default function ChatPage() {
   const { user, loading: userLoading, refetch } = useAuth();
+  const router = useRouter();
+
+  if (!user) {
+    router.push(`/login?message=${encodeURIComponent("You need to login first")}`);
+    return null;
+  }
 
   const {
     conversations: chatHistory,
@@ -48,7 +55,7 @@ export default function ChatPage() {
   useEffect(() => {
     refetch(); // force refresh when entering chat page
   }, [refetch]);
-  const [conversationId, setConversationId] = useState<string|null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   const {
@@ -440,14 +447,14 @@ export default function ChatPage() {
               </>
             )}
 
-            {!isUserAtBottom && 
-            <button
-              onClick={()=>scrollToBottom()}
-              className="fixed bottom-40  md:bottom-4 right-4 z-50 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center animate-bounce"
-            >
-              <ChevronDown size={24} />
+            {!isUserAtBottom && (
+              <button
+                onClick={() => scrollToBottom()}
+                className="fixed bottom-40  md:bottom-4 right-4 z-50 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center animate-bounce"
+              >
+                <ChevronDown size={24} />
               </button>
-            }
+            )}
           </div>
 
           {/* Fixed input area */}

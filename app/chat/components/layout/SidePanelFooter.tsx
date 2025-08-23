@@ -8,10 +8,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Settings, HelpCircle, Sparkles, User, CreditCard, MessageSquare } from "lucide-react";
+import {
+  LogOut,
+  Settings,
+  HelpCircle,
+  Sparkles,
+  User,
+  CreditCard,
+  MessageSquare,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { SidePanelFooterSkeleton } from "../ChatSkeleton";
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +46,9 @@ export function SidePanelFooter() {
               <AvatarFallback>{auth.user?.username[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col items-start min-w-0">
-              <span className="text-sm font-medium truncate">{auth.user?.username}</span>
+              <span className="text-sm font-medium truncate">
+                {auth.user?.username}
+              </span>
               <span className="text-xs text-muted-foreground">
                 {auth.user?.email}
               </span>
@@ -66,11 +82,19 @@ export function SidePanelFooter() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" value={auth.user?.username} defaultValue="John Doe" />
+                  <Input
+                    id="name"
+                    value={auth.user?.username}
+                    defaultValue="John Doe"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={auth.user?.email} defaultValue="john@example.com" />
+                  <Input
+                    id="email"
+                    value={auth.user?.email}
+                    defaultValue="john@example.com"
+                  />
                 </div>
               </div>
               <DialogFooter>
@@ -95,23 +119,24 @@ export function SidePanelFooter() {
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4 space-y-6">
-                  <div className="space-y-4">
-    <h4 className="font-medium">Appearance</h4>
-    <div className="flex items-center justify-between opacity-60">
-      <div className="space-y-1">
-        <Label className="flex items-center gap-2">
-          Dark Mode
-          <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">
-            Default
-          </span>
-        </Label>
-        <p className="text-sm text-muted-foreground">
-          Dark mode is currently the only available theme.
-        </p>
-      </div>
-      <Switch checked={true} disabled /> {/* Always on, disabled */}
-    </div>
-  </div>
+                <div className="space-y-4">
+                  <h4 className="font-medium">Appearance</h4>
+                  <div className="flex items-center justify-between opacity-60">
+                    <div className="space-y-1">
+                      <Label className="flex items-center gap-2">
+                        Dark Mode
+                        <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">
+                          Default
+                        </span>
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Dark mode is currently the only available theme.
+                      </p>
+                    </div>
+                    <Switch checked={true} disabled />{" "}
+                    {/* Always on, disabled */}
+                  </div>
+                </div>
 
                 <div className="space-y-4">
                   <h4 className="font-medium">Notifications</h4>
@@ -241,7 +266,7 @@ export function SidePanelFooter() {
           </Dialog>
 
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-red-600">
+          <DropdownMenuItem onClick={auth.logout} className="text-red-600">
             <LogOut className="w-4 h-4 mr-2" />
             Log Out
           </DropdownMenuItem>

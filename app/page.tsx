@@ -14,9 +14,11 @@ import { FeatureCard } from "@/components/feature-card";
 import { PrivacyModal } from "@/components/privacy-modal";
 import { fetchMe, logoutUser } from "@/lib/authService";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");

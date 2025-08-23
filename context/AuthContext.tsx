@@ -1,6 +1,14 @@
 "use client";
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
 import { fetchMe, logoutUser } from "@/lib/authService";
+import { useRouter } from "next/navigation";
 
 interface AuthContextType {
   user: {
@@ -20,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   //  Wrap the fetch logic in useCallback so it's stable
   const refetch = useCallback(async () => {
@@ -42,7 +51,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     logoutUser();
     setUser(null);
-    window.location.href = "/login";
+
+    router.push("/login");
   };
 
   return (

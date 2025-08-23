@@ -9,7 +9,6 @@ export default function ChatHeader({
   user,
   chatHistory,
   selectedChatId,
-  
 }: {
   user: {
     username: string;
@@ -24,13 +23,15 @@ export default function ChatHeader({
   return (
     <header className="border-b border-gray-800 p-4">
       <div className="container mx-auto flex justify-between items-center">
-        <div className=" flex items-center gap-4">
-          <SidebarTrigger />
-          <h1 className="font-semibold">
-            {chatHistory.find((chat) => chat.id === selectedChatId)?.title ||
-              "New Chat"}
-          </h1>
-        </div>
+        {user && (
+          <div className=" flex items-center gap-4">
+            <SidebarTrigger />
+            <h1 className="font-semibold">
+              {chatHistory.find((chat) => chat.id === selectedChatId)?.title ||
+                "New Chat"}
+            </h1>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="border-cyan-500 text-cyan-500">

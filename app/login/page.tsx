@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,8 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { Shield, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { loginUser } from "@/lib/authService"
+import { useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +23,18 @@ export default function LoginPage() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const searchParams = useSearchParams();
+  const message = searchParams.get("message");
+  const hasToastRef = useRef(false);
+
+  useEffect(() => {
+    if (message && !hasToastRef.current) {
+      toast.info(message);
+      hasToastRef.current = true;
+    }
+  }, [message]);
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
