@@ -1,73 +1,81 @@
-"use client"
+"use client";
 
-import type React from "react"
+export const dynamic = "force-dynamic";
 
-import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Shield, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
-import Link from "next/link"
-import { loginUser } from "@/lib/authService"
-import { useRouter, useSearchParams } from "next/navigation"
-import { toast } from "sonner"
+import type React from "react";
+
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Shield, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { loginUser } from "@/lib/authService";
+import { useRouter, useSearchParams } from "next/navigation";
+// import { toast } from "sonner";
 
 export default function LoginPage() {
+  // const searchParams = useSearchParams();
+  // const message = searchParams.get("message");
+  // const hasToastRef = useRef(false);
+
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const searchParams = useSearchParams();
-  const message = searchParams.get("message");
-  const hasToastRef = useRef(false);
+  // useEffect(() => {
+  //   if (message && !hasToastRef.current) {
+  //     toast.info(message);
+  //     hasToastRef.current = true;
+  //   }
+  // }, [message]);
 
-  useEffect(() => {
-    if (message && !hasToastRef.current) {
-      toast.info(message);
-      hasToastRef.current = true;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      newErrors.email = "Invalid email format";
+    if (!formData.password) newErrors.password = "Password is required";
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    try {
+      setIsLoading(true);
+
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+      };
+
+      await loginUser(payload);
+
+      // JWT is now in HttpOnly cookie
+      router.push("/chat");
+    } catch (err) {
+      console.error(err);
+      alert("Login failed");
+    } finally {
+      setIsLoading(false);
     }
-  }, [message]);
+  };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const newErrors: Record<string, string> = {};
-
-  if (!formData.email.trim()) newErrors.email = "Email is required";
-  else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format";
-  if (!formData.password) newErrors.password = "Password is required";
-
-  setErrors(newErrors);
-  if (Object.keys(newErrors).length > 0) return;
-
-  try {
-    setIsLoading(true);
-
-    const payload = {
-      email: formData.email,
-      password: formData.password,
-    };
-
-    await loginUser(payload);
-
-    // JWT is now in HttpOnly cookie
-    router.push("/chat");
-  } catch (err) {
-    console.error(err);
-    alert("Login failed");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-    
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
       <header className="border-b border-gray-800 p-4">
@@ -103,12 +111,16 @@ const handleSubmit = async (e: React.FormEvent) => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="Enter your email"
                     className="pl-10 bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
                   />
                 </div>
-                {errors.email && <p className="text-sm text-red-400">{errors.email}</p>}
+                {errors.email && (
+                  <p className="text-sm text-red-400">{errors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -119,7 +131,9 @@ const handleSubmit = async (e: React.FormEvent) => {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
                     placeholder="Enter your password"
                     className="pl-10 pr-10 bg-gray-800/50 border-gray-700 focus-visible:ring-cyan-500"
                   />
@@ -128,10 +142,16 @@ const handleSubmit = async (e: React.FormEvent) => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
-                {errors.password && <p className="text-sm text-red-400">{errors.password}</p>}
+                {errors.password && (
+                  <p className="text-sm text-red-400">{errors.password}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -139,13 +159,18 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <Checkbox
                     id="rememberMe"
                     checked={formData.rememberMe}
-                    onCheckedChange={(checked) => setFormData({ ...formData, rememberMe: !!checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, rememberMe: !!checked })
+                    }
                   />
                   <Label htmlFor="rememberMe" className="text-sm">
                     Remember me
                   </Label>
                 </div>
-                <Link href="/forgot-password" className="text-sm text-cyan-500 hover:text-cyan-400">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-cyan-500 hover:text-cyan-400"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -162,7 +187,10 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div className="mt-6 text-center">
               <p className="text-gray-400">
                 Don't have an account?{" "}
-                <Link href="/register" className="text-cyan-500 hover:text-cyan-400">
+                <Link
+                  href="/register"
+                  className="text-cyan-500 hover:text-cyan-400"
+                >
                   Create one here
                 </Link>
               </p>
@@ -171,5 +199,5 @@ const handleSubmit = async (e: React.FormEvent) => {
         </Card>
       </main>
     </div>
-  )
+  );
 }
