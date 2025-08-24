@@ -15,15 +15,23 @@ import { PrivacyModal } from "@/components/privacy-modal";
 import { fetchMe, logoutUser } from "@/lib/authService";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    setIsLoggedIn(Boolean(token));
-  }, []);
+    if (loading) {
+      // While still fetching user, fall back to token check
+      const token = localStorage.getItem("access_token");
+      setIsLoggedIn(Boolean(token));
+    } else {
+      // Once loading finishes, rely on user
+      setIsLoggedIn(Boolean(user));
+    }
+  }, [loading, user]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
@@ -55,35 +63,34 @@ export default function Home() {
           </Link>
         </nav>
         {isLoggedIn ? (
-            <Button
-              onClick={() => {
-                logoutUser();
-                window.location.href = "/login";
-              }}
-              variant="outline"
+          <Button
+            onClick={() => {
+              logoutUser();
+              window.location.href = "/login";
+            }}
+            variant="outline"
             className="border-red-500 text-red-500 hover:bg-red-600 bg-transparent"
-            >
-            Logout 
-            <LogOut/>
+          >
+            Logout
+            <LogOut />
           </Button>
-          
-          ) : (
-            <div className=" flex space-x-2">
-              <Button
+        ) : (
+          <div className=" flex space-x-2">
+            <Button
               asChild
               className=" bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
             >
               <Link href="/login">Login</Link>
             </Button>
             <Button
-            asChild
-            variant="outline"
-            className="border-cyan-500 text-cyan-500 hover:bg-cyan-950 bg-transparent"
-          >
-            <Link href="/register">Register</Link>
-          </Button>
-            </div>
-          )}
+              asChild
+              variant="outline"
+              className="border-cyan-500 text-cyan-500 hover:bg-cyan-950 bg-transparent"
+            >
+              <Link href="/register">Register</Link>
+            </Button>
+          </div>
+        )}
       </header>
 
       <HeroSection tagline="Chat with HackAware for personalized cybersecurity advice." />

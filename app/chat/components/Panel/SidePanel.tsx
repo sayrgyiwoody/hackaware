@@ -62,6 +62,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getToken } from "@/lib/authService";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export default function SidePanel({
   chatHistory,
@@ -142,7 +143,7 @@ export default function SidePanel({
   };
 
   return (
-    <Sidebar className="border-r">
+    <Sidebar>
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -221,38 +222,47 @@ export default function SidePanel({
                             </DropdownMenuItem>
                           </DialogTrigger>
 
-                          <DialogContent>
+                          <DialogContent
+                            aria-labelledby={`dialog-title-${chat.id}`}
+                            aria-describedby={undefined}
+                          >
                             <DialogHeader>
-                              <DialogTitle>Rename Chat</DialogTitle>
-                              <DialogDescription>
-                                Give this conversation a new name.
-                              </DialogDescription>
+                              <VisuallyHidden>
+                                <DialogTitle id={`dialog-title-${chat.id}`}>
+                                  Rename Chat
+                                </DialogTitle>
+                                <DialogDescription
+                                  id={`dialog-description-${chat.id}`}
+                                >
+                                  Give this conversation a new name.
+                                </DialogDescription>
+                              </VisuallyHidden>
                             </DialogHeader>
 
                             <div className="py-4">
                               <Label htmlFor={`chat-name-${chat.id}`}>
-                              Chat Name
+                                Chat Name
                               </Label>
                               <Input
-                              id={`chat-name-${chat.id}`}
-                              value={renameValues[chat.id] ?? chat.title}
-                              onChange={(e) =>
-                                setRenameValues((prev) => ({
-                                ...prev,
-                                [chat.id]: e.target.value,
-                                }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                e.preventDefault();
-                                renameChat(
-                                  chat.id,
-                                  renameValues[chat.id] ?? chat.title
-                                );
-                                setOpenRenameDialogId(null);
+                                id={`chat-name-${chat.id}`}
+                                value={renameValues[chat.id] ?? chat.title}
+                                onChange={(e) =>
+                                  setRenameValues((prev) => ({
+                                    ...prev,
+                                    [chat.id]: e.target.value,
+                                  }))
                                 }
-                              }}
-                              className="mt-2"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    renameChat(
+                                      chat.id,
+                                      renameValues[chat.id] ?? chat.title
+                                    );
+                                    setOpenRenameDialogId(null);
+                                  }
+                                }}
+                                className="mt-2"
                               />
                             </div>
 
@@ -265,7 +275,7 @@ export default function SidePanel({
                               </Button>
                               <Button
                                 onClick={(e) => {
-                                  e.stopPropagation()
+                                  e.stopPropagation();
                                   renameChat(
                                     chat.id,
                                     renameValues[chat.id] ?? chat.title
@@ -291,13 +301,22 @@ export default function SidePanel({
                               Share
                             </DropdownMenuItem>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent
+                            aria-labelledby={`dialog-title-${chat.id}`}
+                            aria-describedby={undefined}
+                          >
                             <DialogHeader>
-                              <DialogTitle>Share Chat</DialogTitle>
-                              <DialogDescription>
-                                Share this conversation with others via a public
-                                link.
-                              </DialogDescription>
+                              <VisuallyHidden>
+                                <DialogTitle id={`dialog-title-${chat.id}`}>
+                                  Share Chat
+                                </DialogTitle>
+                                <DialogDescription
+                                  id={`dialog-description-${chat.id}`}
+                                >
+                                  Share this conversation with others via a
+                                  public link.
+                                </DialogDescription>
+                              </VisuallyHidden>
                             </DialogHeader>
                             <div className="py-4 space-y-4">
                               <div className="flex items-center space-x-2">
@@ -381,12 +400,19 @@ export default function SidePanel({
                     My Profile
                   </DropdownMenuItem>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent
+                  aria-labelledby="profile-settings-title"
+                  aria-describedby={undefined}
+                >
                   <DialogHeader>
-                    <DialogTitle>Profile Settings</DialogTitle>
-                    <DialogDescription>
-                      Manage your account information and preferences.
-                    </DialogDescription>
+                    <VisuallyHidden>
+                      <DialogTitle id="profile-settings-title">
+                        Profile Settings
+                      </DialogTitle>
+                      <DialogDescription id="profile-settings-description">
+                        Manage your account information and preferences.
+                      </DialogDescription>
+                    </VisuallyHidden>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="flex items-center gap-4">
@@ -434,12 +460,20 @@ export default function SidePanel({
                     Settings
                   </DropdownMenuItem>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent
+                  aria-labelledby="settings-dialog-title"
+                  aria-describedby={undefined}
+                  className="max-w-2xl"
+                >
                   <DialogHeader>
-                    <DialogTitle>Settings</DialogTitle>
-                    <DialogDescription>
-                      Customize your HackAware experience.
-                    </DialogDescription>
+                    <VisuallyHidden>
+                      <DialogTitle id="settings-dialog-title">
+                        Settings
+                      </DialogTitle>
+                      <DialogDescription id="settings-dialog-description">
+                        Customize your HackAware experience.
+                      </DialogDescription>
+                    </VisuallyHidden>
                   </DialogHeader>
                   <div className="py-4 space-y-6">
                     <div className="space-y-4">
@@ -504,12 +538,19 @@ export default function SidePanel({
                     Billing
                   </DropdownMenuItem>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent
+                  aria-labelledby="billing-dialog-title"
+                  aria-describedby={undefined}
+                >
                   <DialogHeader>
-                    <DialogTitle>Billing & Subscription</DialogTitle>
-                    <DialogDescription>
-                      Manage your subscription and billing information.
-                    </DialogDescription>
+                    <VisuallyHidden>
+                      <DialogTitle id="billing-dialog-title">
+                        Billing & Subscription
+                      </DialogTitle>
+                      <DialogDescription id="billing-dialog-description">
+                        Manage your subscription and billing information.
+                      </DialogDescription>
+                    </VisuallyHidden>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="p-4 border rounded-lg">
@@ -554,12 +595,19 @@ export default function SidePanel({
                     Help & Support
                   </DropdownMenuItem>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent
+                  aria-labelledby="help-support-title"
+                  aria-describedby={undefined}
+                >
                   <DialogHeader>
-                    <DialogTitle>Help & Support</DialogTitle>
-                    <DialogDescription>
-                      Get help with HackAware or contact our support team.
-                    </DialogDescription>
+                    <VisuallyHidden>
+                      <DialogTitle id="help-support-title">
+                        Help & Support
+                      </DialogTitle>
+                      <DialogDescription id="help-support-description">
+                        Get help with HackAware or contact our support team.
+                      </DialogDescription>
+                    </VisuallyHidden>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="grid grid-cols-2 gap-4">

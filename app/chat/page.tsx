@@ -178,8 +178,8 @@ export default function ChatPage() {
         (parsed) => {
           lastChunk = parsed; // store last parsed chunk
           const content = parsed.message?.content || "";
-          const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
-          botText += cleaned;
+          // const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
+          botText += content;
 
           setIsTyping(false);
 
@@ -243,22 +243,31 @@ export default function ChatPage() {
 
       setMessages((prev) => [...prev, botMessage]);
 
+      console.log("convid", conversationId);
+
       await readStreamingJson(
         response,
         (parsed) => {
           const content = parsed.message?.content || "";
-          const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
-          botText += cleaned;
+
+          // Clean <think> blocks, including partial ones
+          // const cleaned = content
+          //   // remove complete <think>...</think>
+          //   .replace(/<think>[\s\S]*?<\/think>/g, "")
+          //   // also strip any dangling <think>... (in case stream cuts inside)
+          //   .replace(/<think>[\s\S]*$/g, "");
+
+          botText += content;
 
           setIsTyping(false);
 
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === botMessage.id ? { ...msg, content: botText } : msg
+              msg.id === botMessage.id
+                ? { ...msg, content: botText.trim() }
+                : msg
             )
           );
-
-          if (botText.trim() !== "") setIsTyping(false);
         },
         stopRef
       );
@@ -516,7 +525,7 @@ export default function ChatPage() {
             {!isUserAtBottom && (
               <button
                 onClick={() => scrollToBottom()}
-                className="fixed bottom-40  md:bottom-4 right-4 z-50 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center animate-bounce"
+                className="fixed bottom-16 md:bottom-4 right-4 z-50 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center animate-bounce"
               >
                 <ChevronDown size={24} />
               </button>
