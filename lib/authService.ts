@@ -9,7 +9,17 @@ export async function registerUser(payload:any) {
   });
 
   if (!res.ok) throw new Error("Registration failed");
-  return res.json();
+
+  const data = await res.json();
+
+  console.log(data.token.access_token);
+
+  // Store token in localStorage
+  if (typeof window !== "undefined") {
+    localStorage.setItem("access_token", data.token.access_token);
+  }
+
+  return data;
 }
 
 export async function loginUser(payload:any) {

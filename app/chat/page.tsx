@@ -179,7 +179,8 @@ export default function ChatPage() {
           lastChunk = parsed; // store last parsed chunk
           const content = parsed.message?.content || "";
           // const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
-          botText += content;
+          const cleaned = content.replace("</think>", ""); // remove only closing tag to avoid cutting off
+          botText += cleaned;
 
           setIsTyping(false);
 
@@ -250,14 +251,8 @@ export default function ChatPage() {
         (parsed) => {
           const content = parsed.message?.content || "";
 
-          // Clean <think> blocks, including partial ones
-          // const cleaned = content
-          //   // remove complete <think>...</think>
-          //   .replace(/<think>[\s\S]*?<\/think>/g, "")
-          //   // also strip any dangling <think>... (in case stream cuts inside)
-          //   .replace(/<think>[\s\S]*$/g, "");
-
-          botText += content;
+          const cleaned = content.replace("</think>", ""); // remove only closing tag to avoid cutting off
+          botText += cleaned;
 
           setIsTyping(false);
 

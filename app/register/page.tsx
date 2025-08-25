@@ -249,7 +249,11 @@ export default function RegisterPage() {
         expertise: formData.expertiseLevel,
         learning_style: formData.learningPreference,
         password: formData.password,
+        interests: formData.selectedInterests,
+        goals : formData.goals,
       };
+
+      console.log(payload);
 
       await registerUser(payload);
 

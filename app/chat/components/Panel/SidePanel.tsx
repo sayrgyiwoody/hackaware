@@ -106,6 +106,16 @@ export default function SidePanel({
 
   const renameChat = async (chatId: string, newTitle: string) => {
     console.log("conversation_id,new title", chatId, newTitle);
+    setRenameValues((prev) => ({
+        ...prev,
+        [chatId]: newTitle,
+      }));
+      // Update chat history with new title
+      setChatHistory((prev) =>
+        prev.map((chat) =>
+          chat.id === chatId ? { ...chat, title: newTitle } : chat
+        )
+      );
     try {
       const token = getToken();
       console.log("rename request");
@@ -127,20 +137,35 @@ export default function SidePanel({
       }
 
       const data = await response.json();
-      setRenameValues((prev) => ({
-        ...prev,
-        [chatId]: data.title,
-      }));
-      // Update chat history with new title
-      setChatHistory((prev) =>
-        prev.map((chat) =>
-          chat.id === chatId ? { ...chat, title: data.title } : chat
-        )
-      );
+      
     } catch (error: any) {
       console.error("Error rename chat:", error?.message || error);
     }
   };
+
+  const deleteChat = (chatId: string) => {
+    setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
+    if (selectedChatId === chatId) {
+      selectChat(null);
+    }
+    // send delete request to backend here
+    fetch(`${API_URL}/conversations/delete/${chatId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to delete conversation");
+        }
+        console.log("Conversation deleted successfully");
+      })
+      .catch((err) => {
+        console.error("Error deleting conversation:", err);
+      });
+  }
 
   return (
     <Sidebar>
@@ -225,10 +250,11 @@ export default function SidePanel({
                           <DialogContent
                             aria-labelledby={`dialog-title-${chat.id}`}
                             aria-describedby={undefined}
+                            className="max-w-sm md:max-w-xl"
                           >
                             <DialogHeader>
                               <VisuallyHidden>
-                                <DialogTitle id={`dialog-title-${chat.id}`}>
+                                <DialogTitle className=" sr-only" id={`dialog-title-${chat.id}`}>
                                   Rename Chat
                                 </DialogTitle>
                                 <DialogDescription
@@ -244,32 +270,44 @@ export default function SidePanel({
                                 Chat Name
                               </Label>
                               <Input
-                                id={`chat-name-${chat.id}`}
-                                value={renameValues[chat.id] ?? chat.title}
-                                onChange={(e) =>
-                                  setRenameValues((prev) => ({
-                                    ...prev,
-                                    [chat.id]: e.target.value,
-                                  }))
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    renameChat(
-                                      chat.id,
-                                      renameValues[chat.id] ?? chat.title
-                                    );
-                                    setOpenRenameDialogId(null);
+                                  id={`chat-name-${chat.id}`}
+                                  value={renameValues[chat.id] ?? chat.title}
+                                  onChange={(e) =>
+                                    setRenameValues((prev) => ({
+                                      ...prev,
+                                      [chat.id]: e.target.value,
+                                    }))
                                   }
-                                }}
-                                className="mt-2"
-                              />
+                                  onFocus={(e) => {
+                                    // Prevent parent click/trigger firing when input gains focus
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => {
+                                    // Prevent parent click handlers too
+                                    e.stopPropagation();
+                                  }}
+                                  onKeyDown={(e) => {
+                                    e.stopPropagation(); // stops parent hotkeys/handlers
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      renameChat(
+                                        chat.id,
+                                        renameValues[chat.id] ?? chat.title
+                                      );
+                                      setOpenRenameDialogId(null);
+                                    }
+                                  }}
+                                  className="mt-2"
+                                />
                             </div>
 
                             <DialogFooter>
                               <Button
                                 variant="outline"
-                                onClick={() => setOpenRenameDialogId(null)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenRenameDialogId(null);
+                                }}
                               >
                                 Cancel
                               </Button>
@@ -307,7 +345,7 @@ export default function SidePanel({
                           >
                             <DialogHeader>
                               <VisuallyHidden>
-                                <DialogTitle id={`dialog-title-${chat.id}`}>
+                                <DialogTitle className=" sr-only" id={`dialog-title-${chat.id}`}>
                                   Share Chat
                                 </DialogTitle>
                                 <DialogDescription
@@ -327,7 +365,7 @@ export default function SidePanel({
                               </div>
                               <div className="p-3 bg-muted rounded-lg">
                                 <code className="text-sm">
-                                  https://chat.openai.com/share/abc123...
+                                  {`https://hackware.com/share/${chat.title}..`}.
                                 </code>
                               </div>
                             </div>
@@ -349,7 +387,10 @@ export default function SidePanel({
                         {/* Delete */}
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteChat(chat.id);
+                          }}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete
@@ -406,7 +447,7 @@ export default function SidePanel({
                 >
                   <DialogHeader>
                     <VisuallyHidden>
-                      <DialogTitle id="profile-settings-title">
+                      <DialogTitle className=" sr-only" id="profile-settings-title">
                         Profile Settings
                       </DialogTitle>
                       <DialogDescription id="profile-settings-description">
@@ -467,7 +508,7 @@ export default function SidePanel({
                 >
                   <DialogHeader>
                     <VisuallyHidden>
-                      <DialogTitle id="settings-dialog-title">
+                      <DialogTitle className=" sr-only" id="settings-dialog-title">
                         Settings
                       </DialogTitle>
                       <DialogDescription id="settings-dialog-description">
@@ -544,7 +585,7 @@ export default function SidePanel({
                 >
                   <DialogHeader>
                     <VisuallyHidden>
-                      <DialogTitle id="billing-dialog-title">
+                      <DialogTitle className=" sr-only" id="billing-dialog-title">
                         Billing & Subscription
                       </DialogTitle>
                       <DialogDescription id="billing-dialog-description">
@@ -601,7 +642,7 @@ export default function SidePanel({
                 >
                   <DialogHeader>
                     <VisuallyHidden>
-                      <DialogTitle id="help-support-title">
+                      <DialogTitle className=" sr-only" id="help-support-title">
                         Help & Support
                       </DialogTitle>
                       <DialogDescription id="help-support-description">

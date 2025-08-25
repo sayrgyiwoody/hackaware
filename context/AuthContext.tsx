@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await fetchMe();
       setUser(data);
     } catch (err) {
-      router.push("/login");
       console.error(err);
       setUser(null);
     } finally {
