@@ -1,10 +1,6 @@
 import { ChatMessage } from "@/app/chat/components/ChatWindow/ChatMessage";
-import { InteractiveDemo } from "@/components/interactive-demo";
 import { ScanResults } from "@/components/scan-results";
-import { SecurityQuiz } from "@/components/security-quiz";
-import { SecurityThreatAlert } from "@/components/security-threat-alert";
 import { Progress } from "@radix-ui/react-progress";
-import { Code, Lightbulb } from "lucide-react";
 import { MessageType } from "../types";
 
 

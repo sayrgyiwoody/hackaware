@@ -70,13 +70,15 @@ export default function SidePanel({
   selectedChatId,
   selectChat,
   newChat,
+  setMessages,
   isFetching = true,
 }: {
   chatHistory: ChatConversation[];
   setChatHistory: (history: ChatConversation[]) => void;
   selectedChatId: string | null;
-  selectChat: (id: string) => void;
+  selectChat: (id: string | null) => void;
   newChat: () => void;
+  setMessages: (messages: any[]) => void;
   isFetching: boolean;
 }) {
   const auth = useAuth();
@@ -102,20 +104,23 @@ export default function SidePanel({
   const [openRenameDialogId, setOpenRenameDialogId] = useState<string | null>(
     null
   );
+  const [openDeleteDialogId, setOpenDeleteDialogId] = useState<string | null>(
+    null
+  );
   const [renameValues, setRenameValues] = useState<Record<string, string>>({});
 
   const renameChat = async (chatId: string, newTitle: string) => {
     console.log("conversation_id,new title", chatId, newTitle);
     setRenameValues((prev) => ({
-        ...prev,
-        [chatId]: newTitle,
-      }));
-      // Update chat history with new title
-      setChatHistory((prev) =>
-        prev.map((chat) =>
-          chat.id === chatId ? { ...chat, title: newTitle } : chat
-        )
-      );
+      ...prev,
+      [chatId]: newTitle,
+    }));
+    // Update chat history with new title
+    setChatHistory((prev) =>
+      prev.map((chat) =>
+        chat.id === chatId ? { ...chat, title: newTitle } : chat
+      )
+    );
     try {
       const token = getToken();
       console.log("rename request");
@@ -137,7 +142,6 @@ export default function SidePanel({
       }
 
       const data = await response.json();
-      
     } catch (error: any) {
       console.error("Error rename chat:", error?.message || error);
     }
@@ -147,6 +151,7 @@ export default function SidePanel({
     setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
     if (selectedChatId === chatId) {
       selectChat(null);
+      setMessages([]);
     }
     // send delete request to backend here
     fetch(`${API_URL}/conversations/delete/${chatId}`, {
@@ -165,7 +170,7 @@ export default function SidePanel({
       .catch((err) => {
         console.error("Error deleting conversation:", err);
       });
-  }
+  };
 
   return (
     <Sidebar>
@@ -254,7 +259,10 @@ export default function SidePanel({
                           >
                             <DialogHeader>
                               <VisuallyHidden>
-                                <DialogTitle className=" sr-only" id={`dialog-title-${chat.id}`}>
+                                <DialogTitle
+                                  className=" sr-only"
+                                  id={`dialog-title-${chat.id}`}
+                                >
                                   Rename Chat
                                 </DialogTitle>
                                 <DialogDescription
@@ -270,35 +278,35 @@ export default function SidePanel({
                                 Chat Name
                               </Label>
                               <Input
-                                  id={`chat-name-${chat.id}`}
-                                  value={renameValues[chat.id] ?? chat.title}
-                                  onChange={(e) =>
-                                    setRenameValues((prev) => ({
-                                      ...prev,
-                                      [chat.id]: e.target.value,
-                                    }))
+                                id={`chat-name-${chat.id}`}
+                                value={renameValues[chat.id] ?? chat.title}
+                                onChange={(e) =>
+                                  setRenameValues((prev) => ({
+                                    ...prev,
+                                    [chat.id]: e.target.value,
+                                  }))
+                                }
+                                onFocus={(e) => {
+                                  // Prevent parent click/trigger firing when input gains focus
+                                  e.stopPropagation();
+                                }}
+                                onClick={(e) => {
+                                  // Prevent parent click handlers too
+                                  e.stopPropagation();
+                                }}
+                                onKeyDown={(e) => {
+                                  e.stopPropagation(); // stops parent hotkeys/handlers
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    renameChat(
+                                      chat.id,
+                                      renameValues[chat.id] ?? chat.title
+                                    );
+                                    setOpenRenameDialogId(null);
                                   }
-                                  onFocus={(e) => {
-                                    // Prevent parent click/trigger firing when input gains focus
-                                    e.stopPropagation();
-                                  }}
-                                  onClick={(e) => {
-                                    // Prevent parent click handlers too
-                                    e.stopPropagation();
-                                  }}
-                                  onKeyDown={(e) => {
-                                    e.stopPropagation(); // stops parent hotkeys/handlers
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      renameChat(
-                                        chat.id,
-                                        renameValues[chat.id] ?? chat.title
-                                      );
-                                      setOpenRenameDialogId(null);
-                                    }
-                                  }}
-                                  className="mt-2"
-                                />
+                                }}
+                                className="mt-2"
+                              />
                             </div>
 
                             <DialogFooter>
@@ -345,7 +353,10 @@ export default function SidePanel({
                           >
                             <DialogHeader>
                               <VisuallyHidden>
-                                <DialogTitle className=" sr-only" id={`dialog-title-${chat.id}`}>
+                                <DialogTitle
+                                  className=" sr-only"
+                                  id={`dialog-title-${chat.id}`}
+                                >
                                   Share Chat
                                 </DialogTitle>
                                 <DialogDescription
@@ -365,7 +376,8 @@ export default function SidePanel({
                               </div>
                               <div className="p-3 bg-muted rounded-lg">
                                 <code className="text-sm">
-                                  {`https://hackware.com/share/${chat.title}..`}.
+                                  {`https://hackware.com/share/${chat.title}..`}
+                                  .
                                 </code>
                               </div>
                             </div>
@@ -385,16 +397,55 @@ export default function SidePanel({
                         <DropdownMenuSeparator />
 
                         {/* Delete */}
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteChat(chat.id);
-                          }}
+                        <Dialog
+                          open={openDeleteDialogId === chat.id}
+                          onOpenChange={(isOpen) =>
+                            setOpenDeleteDialogId(isOpen ? chat.id : null)
+                          }
                         >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              // prevent dropdown from closing immediately\
+                              onClick={(e) => e.stopPropagation()}
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Delete Chat</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to delete this chat? This
+                                action cannot be undone.
+                              </DialogDescription>
+                            </DialogHeader>
+
+                            <DialogFooter>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDeleteDialogId(null);
+                                }}
+                                variant="outline"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteChat(chat.id);
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </SidebarMenuButton>
@@ -447,7 +498,10 @@ export default function SidePanel({
                 >
                   <DialogHeader>
                     <VisuallyHidden>
-                      <DialogTitle className=" sr-only" id="profile-settings-title">
+                      <DialogTitle
+                        className=" sr-only"
+                        id="profile-settings-title"
+                      >
                         Profile Settings
                       </DialogTitle>
                       <DialogDescription id="profile-settings-description">
@@ -508,7 +562,10 @@ export default function SidePanel({
                 >
                   <DialogHeader>
                     <VisuallyHidden>
-                      <DialogTitle className=" sr-only" id="settings-dialog-title">
+                      <DialogTitle
+                        className=" sr-only"
+                        id="settings-dialog-title"
+                      >
                         Settings
                       </DialogTitle>
                       <DialogDescription id="settings-dialog-description">
@@ -585,7 +642,10 @@ export default function SidePanel({
                 >
                   <DialogHeader>
                     <VisuallyHidden>
-                      <DialogTitle className=" sr-only" id="billing-dialog-title">
+                      <DialogTitle
+                        className=" sr-only"
+                        id="billing-dialog-title"
+                      >
                         Billing & Subscription
                       </DialogTitle>
                       <DialogDescription id="billing-dialog-description">

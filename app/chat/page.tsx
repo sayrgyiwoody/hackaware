@@ -143,19 +143,103 @@ export default function ChatPage() {
     return match ? match[0] : null;
   };
 
+  // --- Step 1: mock Gemini classification fetcher ---
+  const classifyQuestion = async (question: string): Promise<string> => {
+    // Mock API call to Gemini (replace with real later)
+    // This is just a fake classifier to simulate Gemini response
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (question.includes("scan")) resolve("scan");
+        else if (question.includes("quiz")) resolve("quiz");
+        else resolve("general");
+      }, 300); // simulate network delay
+    });
+  };
+
+  // --- Step 2: call API depending on type ---
+  const callApiByType = async (
+    type: string,
+    question: string,
+    token: string | null,
+    signal: AbortSignal,
+    setMessages?: React.Dispatch<React.SetStateAction<MessageType[]>> // so we can push scan messages
+  ): Promise<Response> => {
+    let endpoint = "";
+
+    switch (type) {
+      case "general":
+        endpoint = `${API_URL}/chat/new`;
+        break;
+      case "quiz":
+        endpoint = `${API_URL}/quiz/generate`;
+        break;
+      case "scan":
+        // ---- mock scan fetch ----
+        return mockScanFetcher(question, setMessages);
+      default:
+        endpoint = `${API_URL}/chat/new`;
+    }
+
+    return fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify({ question }),
+      signal,
+    });
+  };
+
+  // --- Mock scan fetcher ---
+  const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
+    const fakeScanResult = {
+      scanned_output: {
+        privacy_risk: {
+          header: "Privacy Risk Assessment",
+          body: "Based on the VirusTotal scan, the file appears to pose minimal privacy risks...",
+        },
+        security: {
+          header: "Security Assessment",
+          body: "The VirusTotal scan indicates a low security risk...",
+        },
+        data_sharing: {
+          header: "Data Sharing Implications",
+          body: "The VirusTotal results suggest minimal overt data sharing concerns...",
+        },
+        overall: {
+          malicious: "0 vendors identified the file as malicious.",
+          suspicious: "0 vendors identified the file as suspicious.",
+          harmless: "66 vendors identified the file as harmless.",
+          undetected:
+            "31 vendors did not detect the file. This does not indicate safety or threat.",
+          timeout: "0 vendors timed out during analysis.",
+        },
+        flagged_vendors: [],
+      },
+      type: "analyze",
+      conversation_id: Date.now(),
+      title: `WAIPayloadScan for ${urlToScan}`,
+    };
+
+    // Return a Response object so createChat can call response.json()
+    return new Response(JSON.stringify(fakeScanResult), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  // --- Step 3: orchestrator (your createChat) ---
   const createChat = async () => {
     try {
       const token = getToken();
-      const response = await fetch(`${API_URL}/chat/new`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ question: input }),
-        signal,
-      });
 
+      // classify type first
+      const type = await classifyQuestion(input);
+      console.log("Classified type:", type);
+
+      // then call correct API
+      const response = await callApiByType(type, input, token, signal);
       if (!response.body) throw new Error("No response body");
 
       // Initial bot message
@@ -168,18 +252,67 @@ export default function ChatPage() {
         content: "",
         datetime: new Date(),
         status: "info",
+        ...(type === "scan" && {
+          isScanning: true,
+          scanProgress: 0,
+        }),
       };
 
       setMessages((prev) => [...prev, botMessage]);
 
-      // Stream chunks and update message progressively
+      if (type === "scan") {
+        // Show progressive scanning animation
+        for (let progress = 10; progress <= 100; progress += 10) {
+          await new Promise((r) => setTimeout(r, 500)); // fake delay
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMessage.id
+                ? { ...msg, scanProgress: progress }
+                : msg
+            )
+          );
+        }
+
+        // Parse JSON response for scan results
+        const result = await response.json();
+        console.log("Scan result:", result);
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessage.id
+              ? {
+                  ...msg,
+                  isScanning: false,
+                  scanResults: result.scanned_output, // This will trigger <ScanResults />
+                }
+              : msg
+          )
+        );
+
+        // Conversation meta
+        setConversationId(result.conversation_id);
+        setSelectedChatId(result.conversation_id);
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            user_id: user?.id || 0,
+            title: result.title || "New Chat",
+            id: result.conversation_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ]);
+
+        return; // Stop here, we don’t need streaming for scan
+      }
+
+      // Normal streaming flow (not scan)
       await readStreamingJson(
         response,
         (parsed) => {
-          lastChunk = parsed; // store last parsed chunk
+          lastChunk = parsed;
           const content = parsed.message?.content || "";
-          // const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, "");
-          const cleaned = content.replace("</think>", ""); // remove only closing tag to avoid cutting off
+          const cleaned = content.replace("</think>", "");
           botText += cleaned;
 
           setIsTyping(false);
@@ -193,11 +326,11 @@ export default function ChatPage() {
         stopRef
       );
 
-      // Get conversation_id from the last parsed chunk
+      // conversation meta for non-scan types
       const conversation_id = lastChunk?.conversation_id;
-      setConversationId(conversation_id);
       const conversation_title = lastChunk?.title || "New Chat";
 
+      setConversationId(conversation_id);
       setSelectedChatId(conversation_id);
       setChatHistory((prev) => [
         ...prev,
@@ -316,99 +449,6 @@ export default function ChatPage() {
     setSuggestions([]);
   };
 
-  const scanUrl = async () => {
-    if (!urlToScan.trim()) return;
-
-    const scanMessageId = Date.now().toString();
-    const scanMessage: MessageType = {
-      id: scanMessageId,
-      role: "assistant",
-      content: `🔍 **Initiating comprehensive security scan of ${urlToScan}**\n\nScanning for vulnerabilities, privacy issues, and security misconfigurations...`,
-      datetime: new Date(),
-      icon: "🛡️",
-      isScanning: true,
-      scanProgress: 0,
-      status: "info",
-    };
-
-    setMessages((prev) => [...prev, scanMessage]);
-    setIsUrlScanning(true);
-    setUrlScanProgress(0);
-
-    // Show scanning progress (optional)
-    const steps = [
-      "Connecting to website...",
-      "Analyzing HTTP headers...",
-      "Checking SSL/TLS configuration...",
-      "Scanning for third-party trackers...",
-      "Detecting JavaScript libraries...",
-      "Analyzing privacy policies...",
-      "Checking security headers...",
-      "Scanning for vulnerabilities...",
-      "Generating security report...",
-      "Finalizing analysis...",
-    ];
-
-    for (let i = 0; i < steps.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      const progress = ((i + 1) / steps.length) * 100;
-      setUrlScanProgress(progress);
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === scanMessageId ? { ...msg, scanProgress: progress } : msg
-        )
-      );
-    }
-
-    try {
-      // scan the URL using your API
-      const response = await fetch(`${API_URL}/scan/url`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ question: urlToScan }),
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch scan results");
-
-      const result = await response.json();
-
-      // Update message with real results
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === scanMessageId
-            ? {
-                ...msg,
-                isScanning: false,
-                scanResults: result,
-                content: `🔍 **Security Scan Complete for ${urlToScan}**\n\nOverall Security Score: **${result.overallScore}/100**\n\nI found ${result.issues.length} security issues that need attention.`,
-              }
-            : msg
-        )
-      );
-    } catch (error) {
-      console.error(error);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === scanMessageId
-            ? {
-                ...msg,
-                isScanning: false,
-                status: "error",
-                content: `❌ Failed to scan ${urlToScan}. Please try again.`,
-              }
-            : msg
-        )
-      );
-    }
-
-    setIsUrlScanning(false);
-    setUrlToScan("");
-  };
-
   const handleScroll = () => {
     if (!scrollRef.current) return;
     const { scrollTop, clientHeight, scrollHeight } = scrollRef.current;
@@ -485,6 +525,7 @@ export default function ChatPage() {
           selectedChatId={selectedChatId}
           selectChat={selectChat}
           newChat={newChat}
+          setMessages={setMessages}
           isFetching={fetchingHistory}
         />
 
@@ -500,7 +541,7 @@ export default function ChatPage() {
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto scrollbar-none lg:p-4 space-y-4 min-h-0 container mx-auto max-w-5xl"
           >
-            {messages.length === 0 ? (
+            {selectedChatId === null && messages.length === 0 ? (
               <WelcomeMessage />
             ) : (
               <>
