@@ -2,12 +2,18 @@ import { ChatMessage } from "@/app/chat/components/ChatWindow/ChatMessage";
 import { ScanResults } from "@/components/scan-results";
 import { Progress } from "@radix-ui/react-progress";
 import { MessageType } from "../types";
+import { ScanResult } from "./ChatWindow/ScanResult";
 
 
 export default function MessageRenderer({ message, isRendering }: { message: MessageType; isRendering: boolean }) {
+  
+  console.log(message);
+  
   return (
     <div>
-      <ChatMessage message={message} isRendering={isRendering} />
+      {message.type !== "analyze" &&
+        <ChatMessage message={message} isRendering={isRendering} />
+      }
 
       {message.isScanning && (
         <div className="ml-11 mt-2">
@@ -48,7 +54,8 @@ export default function MessageRenderer({ message, isRendering }: { message: Mes
 
       {message.scanResults && (
         <div className="ml-11 mt-2">
-          <ScanResults results={message.scanResults} />
+          {/* <ScanResults results={message.scanResults} /> */}
+          <ScanResult data={message.scanResults} />
         </div>
       )}
 

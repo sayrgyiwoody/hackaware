@@ -7,7 +7,8 @@ interface ScanResultsProps {
 }
 
 export function ScanResults({ results }: ScanResultsProps) {
-  const scanned = results.scanned_output
+  console.log('scan result rendered');
+  const scanned = results
 
   if (!scanned) return null
 

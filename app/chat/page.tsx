@@ -143,13 +143,50 @@ export default function ChatPage() {
     return match ? match[0] : null;
   };
 
+  // --- Mock scan fetcher ---
+const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
+  const fakeScanResult = {
+    scanned_output: {
+      privacy_risk: {
+        header: "Privacy Risk Assessment",
+        body: "Based on the VirusTotal scan, the file appears to pose minimal privacy risks...",
+      },
+      security: {
+        header: "Security Assessment",
+        body: "The VirusTotal scan indicates a low security risk...",
+      },
+      data_sharing: {
+        header: "Data Sharing Implications",
+        body: "The VirusTotal results suggest minimal overt data sharing concerns...",
+      },
+      overall: {
+        malicious: "0 vendors identified the file as malicious.",
+        suspicious: "0 vendors identified the file as suspicious.",
+        harmless: "66 vendors identified the file as harmless.",
+        undetected: "31 vendors did not detect the file. This does not indicate safety or threat.",
+        timeout: "0 vendors timed out during analysis.",
+      },
+      flagged_vendors: [],
+    },
+    type: "analyze",
+    conversation_id: Date.now(),
+    title: `WAIPayloadScan for ${urlToScan}`,
+  };
+
+  // Return a Response object so createChat can call response.json()
+  return new Response(JSON.stringify(fakeScanResult), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+  };
+  
   // --- Step 1: mock Gemini classification fetcher ---
   const classifyQuestion = async (question: string): Promise<string> => {
     // Mock API call to Gemini (replace with real later)
     // This is just a fake classifier to simulate Gemini response
     return new Promise((resolve) => {
       setTimeout(() => {
-        if (question.includes("scan")) resolve("scan");
+        if (question.includes("scan")) resolve("analyze");
         else if (question.includes("quiz")) resolve("quiz");
         else resolve("general");
       }, 300); // simulate network delay
@@ -164,18 +201,23 @@ export default function ChatPage() {
     signal: AbortSignal,
     setMessages?: React.Dispatch<React.SetStateAction<MessageType[]>> // so we can push scan messages
   ): Promise<Response> => {
+
+    // if (type === "analyze") {
+    //   return mockScanFetcher(question); // ✅ just return JSON
+    // }
+    console.log(type);
     let endpoint = "";
 
     switch (type) {
       case "general":
         endpoint = `${API_URL}/chat/new`;
         break;
+      case "analyze":
+        endpoint = `${API_URL}/analyze/new`;
+        break;
       case "quiz":
         endpoint = `${API_URL}/quiz/generate`;
-        break;
-      case "scan":
-        // ---- mock scan fetch ----
-        return mockScanFetcher(question, setMessages);
+      // ---- mock scan fetch ----
       default:
         endpoint = `${API_URL}/chat/new`;
     }
@@ -186,49 +228,10 @@ export default function ChatPage() {
         "Content-Type": "application/json",
         Authorization: token ? `Bearer ${token}` : "",
       },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify(type === "analyze" ? { url: question } : { question }),
       signal,
     });
   };
-
-  // --- Mock scan fetcher ---
-  const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
-    const fakeScanResult = {
-      scanned_output: {
-        privacy_risk: {
-          header: "Privacy Risk Assessment",
-          body: "Based on the VirusTotal scan, the file appears to pose minimal privacy risks...",
-        },
-        security: {
-          header: "Security Assessment",
-          body: "The VirusTotal scan indicates a low security risk...",
-        },
-        data_sharing: {
-          header: "Data Sharing Implications",
-          body: "The VirusTotal results suggest minimal overt data sharing concerns...",
-        },
-        overall: {
-          malicious: "0 vendors identified the file as malicious.",
-          suspicious: "0 vendors identified the file as suspicious.",
-          harmless: "66 vendors identified the file as harmless.",
-          undetected:
-            "31 vendors did not detect the file. This does not indicate safety or threat.",
-          timeout: "0 vendors timed out during analysis.",
-        },
-        flagged_vendors: [],
-      },
-      type: "analyze",
-      conversation_id: Date.now(),
-      title: `WAIPayloadScan for ${urlToScan}`,
-    };
-
-    // Return a Response object so createChat can call response.json()
-    return new Response(JSON.stringify(fakeScanResult), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  };
-
   // --- Step 3: orchestrator (your createChat) ---
   const createChat = async () => {
     try {
@@ -239,8 +242,10 @@ export default function ChatPage() {
       console.log("Classified type:", type);
 
       // then call correct API
-      const response = await callApiByType(type, input, token, signal);
-      if (!response.body) throw new Error("No response body");
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      const responsePromise = callApiByType(type, input, token, signal);
 
       // Initial bot message
       let botText = "";
@@ -252,61 +257,104 @@ export default function ChatPage() {
         content: "",
         datetime: new Date(),
         status: "info",
-        ...(type === "scan" && {
+        ...(type === "analyze" && {
           isScanning: true,
           scanProgress: 0,
+          type: "analyze",
         }),
       };
 
       setMessages((prev) => [...prev, botMessage]);
 
-      if (type === "scan") {
-        // Show progressive scanning animation
-        for (let progress = 10; progress <= 100; progress += 10) {
-          await new Promise((r) => setTimeout(r, 500)); // fake delay
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === botMessage.id
-                ? { ...msg, scanProgress: progress }
-                : msg
-            )
-          );
-        }
+      if (type === "analyze") {
+        let finished = false;
+        const startTime = Date.now();
+        const ESTIMATED_SCAN_TIME = 10000; // 10s baseline
 
-        // Parse JSON response for scan results
-        const result = await response.json();
-        console.log("Scan result:", result);
-
+        // ✅ Use the existing botMessage passed from createChat
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === botMessage.id
-              ? {
-                  ...msg,
-                  isScanning: false,
-                  scanResults: result.scanned_output, // This will trigger <ScanResults />
-                }
+              ? { ...msg, isScanning: true, scanProgress: 0 }
+              : msg
+          )
+        );
+
+        // Progress updater loop
+        const progressLoop = async () => {
+          while (!finished) {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(
+              Math.floor((elapsed / ESTIMATED_SCAN_TIME) * 100),
+              95 // cap before real response
+            );
+
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === botMessage.id
+                  ? { ...msg, scanProgress: progress }
+                  : msg
+              )
+            );
+
+            await new Promise((r) => setTimeout(r, 300));
+          }
+        };
+
+        // Start progress loop
+        progressLoop();
+
+        // === Wait for API ===
+        const response = await responsePromise;
+        finished = true;
+
+        if (!response.ok) throw new Error("Scan API error");
+        const result = await response.json();
+
+        console.log("Scan result:", result);
+        const newMessage = {
+          ...botMessage,
+          isScanning: false,
+          scanProgress: 100,
+          scanResults: result.scanned_output,
+          type: "analyze",
+        }
+
+        console.log('newMessage', newMessage)
+
+        // Final update
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessage.id
+              ? { ...newMessage }
               : msg
           )
         );
 
         // Conversation meta
-        setConversationId(result.conversation_id);
-        setSelectedChatId(result.conversation_id);
-        setChatHistory((prev) => [
-          ...prev,
-          {
-            user_id: user?.id || 0,
-            title: result.title || "New Chat",
-            id: result.conversation_id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
+        // setConversationId(result.conversation_id);
+        // setSelectedChatId(result.conversation_id);
+        // setChatHistory((prev) => [
+        //   ...prev,
+        //   {
+        //     user_id: user?.id || 0,
+        //     title: result.title || "New Chat",
+        //     id: result.conversation_id,
+        //     created_at: new Date().toISOString(),
+        //     updated_at: new Date().toISOString(),
+        //   },
+        // ]);
 
-        return; // Stop here, we don’t need streaming for scan
+        return; // stop here
       }
 
-      // Normal streaming flow (not scan)
+      setIsTyping(true);
+      setIsRendering(true);
+
+      // --- Non-scan: normal streaming flow ---
+      const response = await responsePromise;
+      if (!response.body) throw new Error("No response body");
+
       await readStreamingJson(
         response,
         (parsed) => {
@@ -350,6 +398,8 @@ export default function ChatPage() {
   // Sends a user message in an existing conversation
   const sendMessage = async () => {
     try {
+      setIsTyping(true);
+      setIsRendering(true);
       const token = getToken();
       const response = await fetch(
         `${API_URL}/chat/conversation/${conversationId}`,
@@ -421,9 +471,6 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-
-    setIsTyping(true);
-    setIsRendering(true);
 
     // Decide whether to create a new chat or send in existing conversation
     if (messages.length === 0) {
@@ -585,7 +632,7 @@ export default function ChatPage() {
             urlToScan={urlToScan}
             setUrlToScan={setUrlToScan}
             isUrlScanning={isUrlScanning}
-            scanUrl={scanUrl}
+            scanUrl={handleSendMessage}
             showAnalysisModal={showAnalysisModal}
             setShowAnalysisModal={setShowAnalysisModal}
           />

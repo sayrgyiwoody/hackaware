@@ -13,4 +13,5 @@ export type MessageType = {
   quiz?: any;
   codeExample?: any;
   securityTip?: any;
+  type?: any;
 };
