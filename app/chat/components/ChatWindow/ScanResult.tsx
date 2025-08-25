@@ -171,7 +171,7 @@ export function ScanResult({ data }: SecurityDashboardProps) {
 
   return (
     <motion.div
-      className="container mx-auto p-4 sm:p-6 space-y-6 bg-background text-foreground"
+      className="container mx-auto p-4 sm:p-6 space-y-6 text-foreground"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
