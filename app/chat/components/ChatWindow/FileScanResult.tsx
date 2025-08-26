@@ -14,7 +14,7 @@ type FileScanResultProps = {
       clamav: {
         status: "clean" | "infected" | string
       }
-      prompt_injection: {
+      prompt_injection?: {
         is_injection: boolean
         score: number
         reasons: string[]
@@ -145,19 +145,19 @@ export default function FileScanResult({ analysisResult }: FileScanResultProps) 
               <span className="text-gray-400">Prompt Injection:</span>
               <span
                 className={
-                  analysisResult.details.prompt_injection.is_injection
+                  analysisResult.details.prompt_injection?.is_injection
                     ? "text-red-400"
                     : "text-green-400"
                 }
               >
-                {analysisResult.details.prompt_injection.is_injection ? "Detected" : "None"}
+                {analysisResult.details.prompt_injection?.is_injection ? "Detected" : "None"}
               </span>
             </div>
-            {analysisResult.details.prompt_injection.score > 0 && (
+            {analysisResult.details.prompt_injection?.score > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-400">Risk Score:</span>
                 <span className="text-yellow-400">
-                  {analysisResult.details.prompt_injection.score}
+                  {analysisResult.details.prompt_injection?.score}
                 </span>
               </div>
             )}
@@ -174,10 +174,6 @@ export default function FileScanResult({ analysisResult }: FileScanResultProps) 
             <div className="flex justify-between">
               <span className="text-gray-400">Upload Date:</span>
               <span>{formatDate(analysisResult.metadata.upload_date)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">User ID:</span>
-              <span>{analysisResult.metadata.user_id}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">File Path:</span>
@@ -206,11 +202,11 @@ export default function FileScanResult({ analysisResult }: FileScanResultProps) 
       </div>
 
       {/* Prompt Injection Details */}
-      {analysisResult.details.prompt_injection.reasons.length > 0 && (
+      {analysisResult.details.prompt_injection?.reasons.length > 0 && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
           <h4 className="font-medium mb-2 text-red-400">Prompt Injection Reasons</h4>
           <ul className="text-sm space-y-1">
-            {analysisResult.details.prompt_injection.reasons.map((reason, index) => (
+            {analysisResult.details.prompt_injection?.reasons.map((reason, index) => (
               <li key={index} className="text-red-300">
                 • {reason}
               </li>
