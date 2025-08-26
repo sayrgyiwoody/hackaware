@@ -209,9 +209,7 @@ export function ScanResult({ data }: SecurityDashboardProps) {
             Comprehensive security analysis results
           </p>
         </div>
-        <Badge variant="outline" className="text-sm w-fit">
-          Scan ID: {data.conversation_id}
-        </Badge>
+        
       </motion.div>
 
       {/* Risk Overview Cards */}
