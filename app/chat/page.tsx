@@ -44,6 +44,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import DecidingIndicator from "./components/ChatWindow/DecidingIndicator";
 
 export default function ChatPage() {
   const { user, loading: userLoading, refetch } = useAuth();
@@ -107,6 +108,8 @@ export default function ChatPage() {
   const stopRef = useRef(false);
   const controller = new AbortController();
   const signal = controller.signal;
+
+  const [decidingType, setDecidingType] = useState(false);
 
   const filterSuggestions = (inputValue: string) => {
     if (inputValue.length < 2) {
@@ -193,16 +196,44 @@ export default function ChatPage() {
   };
 
   // --- Step 1: mock Gemini classification fetcher ---
-  const classifyQuestion = async (question: string): Promise<string> => {
-    // Mock API call to Gemini (replace with real later)
-    // This is just a fake classifier to simulate Gemini response
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (question.includes("scan")) resolve("analyze");
-        else if (question.includes("quiz")) resolve("quiz");
-        else resolve("general");
-      }, 300); // simulate network delay
-    });
+  // const classifyQuestion = async (question: string): Promise<string> => {
+  //   // Mock API call to Gemini (replace with real later)
+  //   // This is just a fake classifier to simulate Gemini response
+  //   return new Promise((resolve) => {
+  //     setTimeout(() => {
+  //       if (question.includes("scan")) resolve("analyze");
+  //       else if (question.includes("quiz")) resolve("quiz");
+  //       else resolve("general");
+  //     }, 300); // simulate network delay
+  //   });
+  // };
+
+  const classifyQuestion = async (input: string): Promise<string> => {
+    try {
+      setDecidingType(true);
+      console.log("Classifying question:", input);
+      const token = getToken();
+      const response = await fetch(`${API_URL}/decisions/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ question: input }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching decisions: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.decision_status === "scan" ? "analyze" : "general";
+    } catch (error) {
+      console.error("Error in classifyQuestion:", error);
+      throw error;
+    } finally {
+      setDecidingType(false);
+    }
   };
 
   // --- Step 2: call API depending on type ---
@@ -258,9 +289,10 @@ export default function ChatPage() {
       const controller = new AbortController();
       const { signal } = controller;
 
-      const responsePromise = type === "analyze"
-        ? callApiByType(type, extractUrlFromMessage(input), token, signal)
-        : callApiByType(type, input, token, signal);
+      const responsePromise =
+        type === "analyze"
+          ? callApiByType(type, extractUrlFromMessage(input), token, signal)
+          : callApiByType(type, input, token, signal);
 
       // Initial bot message
       let botText = "";
@@ -308,9 +340,9 @@ export default function ChatPage() {
 
             setMessages((prev) =>
               prev.map((msg) =>
-          msg.id === botMessage.id
-            ? { ...msg, scanProgress: progress }
-            : msg
+                msg.id === botMessage.id
+                  ? { ...msg, scanProgress: progress }
+                  : msg
               )
             );
 
@@ -369,7 +401,7 @@ export default function ChatPage() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-          ...prev
+          ...prev,
         ]);
 
         return; // stop here
@@ -415,7 +447,7 @@ export default function ChatPage() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
-        ...prev
+        ...prev,
       ]);
     } catch (error: any) {
       console.error("Error creating chat:", error?.message || error);
@@ -476,11 +508,12 @@ export default function ChatPage() {
 
         // progress updater loop
         const progressLoop = async () => {
+          const ESTIMATED_SCAN_TIME = 25000; // 25 seconds
           while (!finished) {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(
               Math.floor((elapsed / ESTIMATED_SCAN_TIME) * 100),
-              95
+              95 // cap before real response
             );
 
             setMessages((prev) =>
@@ -493,29 +526,21 @@ export default function ChatPage() {
 
             await new Promise((r) => setTimeout(r, 300));
           }
-
-          // ✅ final 100% update
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === botMessage.id ? { ...msg, scanProgress: 100 } : msg
-            )
-          );
         };
         progressLoop();
 
         try {
+          const inputUrl = extractUrlFromMessage(input);
           // real API call
-          // const response = await fetch(endpoint, {
-          //   method: "POST",
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //     Authorization: token ? `Bearer ${token}` : "",
-          //   },
-          //   body: JSON.stringify({ url: input }),
-          //   signal,
-          // });
-
-          const response = await mockScanFetcher(input);
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+            body: JSON.stringify({ url: inputUrl }),
+            signal,
+          });
 
           if (!response.ok) throw new Error("Scan API error");
 
@@ -752,7 +777,8 @@ export default function ChatPage() {
                     />
                   </div>
                 ))}
-                {isTyping && <ChatTypingIndicator />}
+                {/* {isTyping && <ChatTypingIndicator />} */}
+                {(isTyping || decidingType) && <DecidingIndicator />}
                 <div ref={messagesEndRef} />
               </>
             )}

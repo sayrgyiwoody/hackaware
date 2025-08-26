@@ -172,7 +172,7 @@ export default function SidePanel({
       });
   };
 
-  console.log('chat history', chatHistory);
+  // console.log('chat history', chatHistory);
 
   return (
     <Sidebar>
