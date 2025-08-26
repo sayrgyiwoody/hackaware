@@ -2,7 +2,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL; // e.g. "http://localhost:5000/api"
 
 export async function registerUser(payload:any) {
-  const res = await fetch(`${API_URL}/users`, {
+  const res = await fetch(`${API_URL}/users/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

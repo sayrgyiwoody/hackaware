@@ -172,6 +172,8 @@ export default function SidePanel({
       });
   };
 
+  console.log('chat history', chatHistory);
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -202,254 +204,254 @@ export default function SidePanel({
           <SidebarMenu>
             {!auth.user ? (
               // If no user → show skeleton only
-              <ChatHistorySkeleton />
+              <ChatHistorySkeleton key="no-user-skeleton" />
             ) : isFetching ? (
               // If fetching → show skeleton
-              <ChatHistorySkeleton />
+              <ChatHistorySkeleton key="fetching-skeleton" />
             ) : chatHistory.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">
-                No chat history to show.
+              <p key="no-chat-history" className="p-4 text-sm text-muted-foreground">
+              No chat history to show.
               </p>
             ) : (
-              chatHistory.map((chat) => (
-                <SidebarMenuItem key={chat.id}>
-                  <SidebarMenuButton
-                    onClick={() => handleSelectChat(chat.id)}
-                    isActive={selectedChatId === chat.id}
-                    className="w-full justify-between group"
+              chatHistory?.map((chat) => (
+              <SidebarMenuItem key={chat.id}>
+                <SidebarMenuButton
+                onClick={() => handleSelectChat(chat.id)}
+                isActive={selectedChatId === chat.id}
+                className="w-full justify-between group"
+                >
+                <span className="flex-1 truncate">
+                  {chat.title.length > 22
+                  ? `${chat.title.slice(0, 22)}...`
+                  : chat.title}
+                </span>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                  <span
+                    className="inline-flex justify-center items-center md:opacity-0 md:group-hover:opacity-100 h-6 w-6 p-0"
+                    onClick={(e) => e.stopPropagation()} // prevent row click
                   >
-                    <span className="flex-1 truncate">
-                      {chat.title.length > 22
-                        ? `${chat.title.slice(0, 22)}...`
-                        : chat.title}
-                    </span>
+                    <MoreHorizontal className="w-4 h-4" />
+                  </span>
+                  </DropdownMenuTrigger>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <span
-                          className="inline-flex justify-center items-center md:opacity-0 md:group-hover:opacity-100 h-6 w-6 p-0"
-                          onClick={(e) => e.stopPropagation()} // prevent row click
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </span>
-                      </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                  {/* Rename Dialog */}
+                  <Dialog
+                    open={openRenameDialogId === chat.id}
+                    onOpenChange={(isOpen) =>
+                    setOpenRenameDialogId(isOpen ? chat.id : null)
+                    }
+                  >
+                    <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      onClick={(e) => e.stopPropagation()}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Rename
+                    </DropdownMenuItem>
+                    </DialogTrigger>
 
-                      <DropdownMenuContent align="end">
-                        {/* Rename Dialog */}
-                        <Dialog
-                          open={openRenameDialogId === chat.id}
-                          onOpenChange={(isOpen) =>
-                            setOpenRenameDialogId(isOpen ? chat.id : null)
-                          }
-                        >
-                          <DialogTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={(e) => e.stopPropagation()}
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Edit3 className="w-4 h-4 mr-2" />
-                              Rename
-                            </DropdownMenuItem>
-                          </DialogTrigger>
+                    <DialogContent
+                    aria-labelledby={`dialog-title-${chat.id}`}
+                    aria-describedby={undefined}
+                    className="max-w-sm md:max-w-xl"
+                    >
+                    <DialogHeader>
+                      <VisuallyHidden>
+                      <DialogTitle
+                        className=" sr-only"
+                        id={`dialog-title-${chat.id}`}
+                      >
+                        Rename Chat
+                      </DialogTitle>
+                      <DialogDescription
+                        id={`dialog-description-${chat.id}`}
+                      >
+                        Give this conversation a new name.
+                      </DialogDescription>
+                      </VisuallyHidden>
+                    </DialogHeader>
 
-                          <DialogContent
-                            aria-labelledby={`dialog-title-${chat.id}`}
-                            aria-describedby={undefined}
-                            className="max-w-sm md:max-w-xl"
-                          >
-                            <DialogHeader>
-                              <VisuallyHidden>
-                                <DialogTitle
-                                  className=" sr-only"
-                                  id={`dialog-title-${chat.id}`}
-                                >
-                                  Rename Chat
-                                </DialogTitle>
-                                <DialogDescription
-                                  id={`dialog-description-${chat.id}`}
-                                >
-                                  Give this conversation a new name.
-                                </DialogDescription>
-                              </VisuallyHidden>
-                            </DialogHeader>
+                    <div className="py-4">
+                      <Label htmlFor={`chat-name-${chat.id}`}>
+                      Chat Name
+                      </Label>
+                      <Input
+                      id={`chat-name-${chat.id}`}
+                      value={renameValues[chat.id] ?? chat.title}
+                      onChange={(e) =>
+                        setRenameValues((prev) => ({
+                        ...prev,
+                        [chat.id]: e.target.value,
+                        }))
+                      }
+                      onFocus={(e) => {
+                        // Prevent parent click/trigger firing when input gains focus
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        // Prevent parent click handlers too
+                        e.stopPropagation();
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation(); // stops parent hotkeys/handlers
+                        if (e.key === "Enter") {
+                        e.preventDefault();
+                        renameChat(
+                          chat.id,
+                          renameValues[chat.id] ?? chat.title
+                        );
+                        setOpenRenameDialogId(null);
+                        }
+                      }}
+                      className="mt-2"
+                      />
+                    </div>
 
-                            <div className="py-4">
-                              <Label htmlFor={`chat-name-${chat.id}`}>
-                                Chat Name
-                              </Label>
-                              <Input
-                                id={`chat-name-${chat.id}`}
-                                value={renameValues[chat.id] ?? chat.title}
-                                onChange={(e) =>
-                                  setRenameValues((prev) => ({
-                                    ...prev,
-                                    [chat.id]: e.target.value,
-                                  }))
-                                }
-                                onFocus={(e) => {
-                                  // Prevent parent click/trigger firing when input gains focus
-                                  e.stopPropagation();
-                                }}
-                                onClick={(e) => {
-                                  // Prevent parent click handlers too
-                                  e.stopPropagation();
-                                }}
-                                onKeyDown={(e) => {
-                                  e.stopPropagation(); // stops parent hotkeys/handlers
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    renameChat(
-                                      chat.id,
-                                      renameValues[chat.id] ?? chat.title
-                                    );
-                                    setOpenRenameDialogId(null);
-                                  }
-                                }}
-                                className="mt-2"
-                              />
-                            </div>
+                    <DialogFooter>
+                      <Button
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenRenameDialogId(null);
+                      }}
+                      >
+                      Cancel
+                      </Button>
+                      <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        renameChat(
+                        chat.id,
+                        renameValues[chat.id] ?? chat.title
+                        );
+                        setOpenRenameDialogId(null);
+                      }}
+                      onSelect={(e) => e.preventDefault()}
+                      >
+                      Save
+                      </Button>
+                    </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
-                            <DialogFooter>
-                              <Button
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenRenameDialogId(null);
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  renameChat(
-                                    chat.id,
-                                    renameValues[chat.id] ?? chat.title
-                                  );
-                                  setOpenRenameDialogId(null);
-                                }}
-                                onSelect={(e) => e.preventDefault()}
-                              >
-                                Save
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                  {/* Share Dialog */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      onClick={(e) => e.stopPropagation()}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Share className="w-4 h-4 mr-2" />
+                      Share
+                    </DropdownMenuItem>
+                    </DialogTrigger>
+                    <DialogContent
+                    aria-labelledby={`dialog-title-${chat.id}`}
+                    aria-describedby={undefined}
+                    >
+                    <DialogHeader>
+                      <VisuallyHidden>
+                      <DialogTitle
+                        className=" sr-only"
+                        id={`dialog-title-${chat.id}`}
+                      >
+                        Share Chat
+                      </DialogTitle>
+                      <DialogDescription
+                        id={`dialog-description-${chat.id}`}
+                      >
+                        Share this conversation with others via a
+                        public link.
+                      </DialogDescription>
+                      </VisuallyHidden>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                      <div className="flex items-center space-x-2">
+                      <Switch id="share-mode" />
+                      <Label htmlFor="share-mode">
+                        Make conversation public
+                      </Label>
+                      </div>
+                      <div className="p-3 bg-muted rounded-lg">
+                      <code className="text-sm">
+                        {`https://hackware.com/share/${chat.title}..`}
+                        .
+                      </code>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline">Cancel</Button>
+                      <Button>Copy Link</Button>
+                    </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
-                        {/* Share Dialog */}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={(e) => e.stopPropagation()}
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Share className="w-4 h-4 mr-2" />
-                              Share
-                            </DropdownMenuItem>
-                          </DialogTrigger>
-                          <DialogContent
-                            aria-labelledby={`dialog-title-${chat.id}`}
-                            aria-describedby={undefined}
-                          >
-                            <DialogHeader>
-                              <VisuallyHidden>
-                                <DialogTitle
-                                  className=" sr-only"
-                                  id={`dialog-title-${chat.id}`}
-                                >
-                                  Share Chat
-                                </DialogTitle>
-                                <DialogDescription
-                                  id={`dialog-description-${chat.id}`}
-                                >
-                                  Share this conversation with others via a
-                                  public link.
-                                </DialogDescription>
-                              </VisuallyHidden>
-                            </DialogHeader>
-                            <div className="py-4 space-y-4">
-                              <div className="flex items-center space-x-2">
-                                <Switch id="share-mode" />
-                                <Label htmlFor="share-mode">
-                                  Make conversation public
-                                </Label>
-                              </div>
-                              <div className="p-3 bg-muted rounded-lg">
-                                <code className="text-sm">
-                                  {`https://hackware.com/share/${chat.title}..`}
-                                  .
-                                </code>
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button variant="outline">Cancel</Button>
-                              <Button>Copy Link</Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                  {/* Export */}
+                  <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </DropdownMenuItem>
 
-                        {/* Export */}
-                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                          <Download className="w-4 h-4 mr-2" />
-                          Export
-                        </DropdownMenuItem>
+                  <DropdownMenuSeparator />
 
-                        <DropdownMenuSeparator />
+                  {/* Delete */}
+                  <Dialog
+                    open={openDeleteDialogId === chat.id}
+                    onOpenChange={(isOpen) =>
+                    setOpenDeleteDialogId(isOpen ? chat.id : null)
+                    }
+                  >
+                    <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      // prevent dropdown from closing immediately\
+                      onClick={(e) => e.stopPropagation()}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                    </DialogTrigger>
 
-                        {/* Delete */}
-                        <Dialog
-                          open={openDeleteDialogId === chat.id}
-                          onOpenChange={(isOpen) =>
-                            setOpenDeleteDialogId(isOpen ? chat.id : null)
-                          }
-                        >
-                          <DialogTrigger asChild>
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              // prevent dropdown from closing immediately\
-                              onClick={(e) => e.stopPropagation()}
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DialogTrigger>
+                    <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Delete Chat</DialogTitle>
+                      <DialogDescription>
+                      Are you sure you want to delete this chat? This
+                      action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
 
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Delete Chat</DialogTitle>
-                              <DialogDescription>
-                                Are you sure you want to delete this chat? This
-                                action cannot be undone.
-                              </DialogDescription>
-                            </DialogHeader>
-
-                            <DialogFooter>
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenDeleteDialogId(null);
-                                }}
-                                variant="outline"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteChat(chat.id);
-                                }}
-                              >
-                                Delete
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                    <DialogFooter>
+                      <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDeleteDialogId(null);
+                      }}
+                      variant="outline"
+                      >
+                      Cancel
+                      </Button>
+                      <Button
+                      variant="destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteChat(chat.id);
+                      }}
+                      >
+                      Delete
+                      </Button>
+                    </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               ))
             )}
           </SidebarMenu>

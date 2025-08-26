@@ -53,6 +53,11 @@ interface SecurityData {
     undetected: string;
     timeout: string;
   };
+  flagged_vendors?: {
+    vendor_name: string;
+    category: string;
+    result: string;
+  }[];
 }
 
 interface SecurityDashboardProps {

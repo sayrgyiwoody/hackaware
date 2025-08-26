@@ -140,46 +140,58 @@ export default function ChatPage() {
   const extractUrlFromMessage = (message: string): string | null => {
     const urlRegex = /(https?:\/\/[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,})/g;
     const match = message.match(urlRegex);
-    return match ? match[0] : null;
+
+    if (!match) return null;
+
+    let url = match[0].trim();
+
+    // If already has protocol, return as is
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+
+    // Otherwise, prepend http://
+    return `http://${url}`;
   };
 
   // --- Mock scan fetcher ---
-const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
-  const fakeScanResult = {
-    scanned_output: {
-      privacy_risk: {
-        header: "Privacy Risk Assessment",
-        body: "Based on the VirusTotal scan, the file appears to pose minimal privacy risks...",
+  const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
+    const fakeScanResult = {
+      scanned_output: {
+        privacy_risk: {
+          header: "Privacy Risk Assessment",
+          body: "Based on the VirusTotal scan, the file appears to pose minimal privacy risks...",
+        },
+        security: {
+          header: "Security Assessment",
+          body: "The VirusTotal scan indicates a low security risk...",
+        },
+        data_sharing: {
+          header: "Data Sharing Implications",
+          body: "The VirusTotal results suggest minimal overt data sharing concerns...",
+        },
+        overall: {
+          malicious: "0 vendors identified the file as malicious.",
+          suspicious: "0 vendors identified the file as suspicious.",
+          harmless: "66 vendors identified the file as harmless.",
+          undetected:
+            "31 vendors did not detect the file. This does not indicate safety or threat.",
+          timeout: "0 vendors timed out during analysis.",
+        },
+        flagged_vendors: [],
       },
-      security: {
-        header: "Security Assessment",
-        body: "The VirusTotal scan indicates a low security risk...",
-      },
-      data_sharing: {
-        header: "Data Sharing Implications",
-        body: "The VirusTotal results suggest minimal overt data sharing concerns...",
-      },
-      overall: {
-        malicious: "0 vendors identified the file as malicious.",
-        suspicious: "0 vendors identified the file as suspicious.",
-        harmless: "66 vendors identified the file as harmless.",
-        undetected: "31 vendors did not detect the file. This does not indicate safety or threat.",
-        timeout: "0 vendors timed out during analysis.",
-      },
-      flagged_vendors: [],
-    },
-    type: "analyze",
-    conversation_id: Date.now(),
-    title: `WAIPayloadScan for ${urlToScan}`,
+      type: "analyze",
+      conversation_id: Date.now(),
+      title: `WAIPayloadScan for ${urlToScan}`,
+    };
+
+    // Return a Response object so createChat can call response.json()
+    return new Response(JSON.stringify(fakeScanResult), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   };
 
-  // Return a Response object so createChat can call response.json()
-  return new Response(JSON.stringify(fakeScanResult), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
-  };
-  
   // --- Step 1: mock Gemini classification fetcher ---
   const classifyQuestion = async (question: string): Promise<string> => {
     // Mock API call to Gemini (replace with real later)
@@ -196,12 +208,11 @@ const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
   // --- Step 2: call API depending on type ---
   const callApiByType = async (
     type: string,
-    question: string,
+    question: string | null,
     token: string | null,
     signal: AbortSignal,
     setMessages?: React.Dispatch<React.SetStateAction<MessageType[]>> // so we can push scan messages
   ): Promise<Response> => {
-
     // if (type === "analyze") {
     //   return mockScanFetcher(question); // ✅ just return JSON
     // }
@@ -228,7 +239,9 @@ const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
         "Content-Type": "application/json",
         Authorization: token ? `Bearer ${token}` : "",
       },
-      body: JSON.stringify(type === "analyze" ? { url: question } : { question }),
+      body: JSON.stringify(
+        type === "analyze" ? { url: question } : { question }
+      ),
       signal,
     });
   };
@@ -245,7 +258,9 @@ const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
       const controller = new AbortController();
       const { signal } = controller;
 
-      const responsePromise = callApiByType(type, input, token, signal);
+      const responsePromise = type === "analyze"
+        ? callApiByType(type, extractUrlFromMessage(input), token, signal)
+        : callApiByType(type, input, token, signal);
 
       // Initial bot message
       let botText = "";
@@ -267,6 +282,7 @@ const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
       setMessages((prev) => [...prev, botMessage]);
 
       if (type === "analyze") {
+        console.log("Starting scan flow");
         let finished = false;
         const startTime = Date.now();
         const ESTIMATED_SCAN_TIME = 10000; // 10s baseline
@@ -312,38 +328,48 @@ const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
         const result = await response.json();
 
         console.log("Scan result:", result);
-        const newMessage = {
-          ...botMessage,
-          isScanning: false,
-          scanProgress: 100,
-          scanResults: result.scanned_output,
-          type: "analyze",
+        let newMessage = null;
+        if (result.error) {
+          botMessage.content = result.error;
+          newMessage = {
+            ...botMessage,
+            isScanning: false,
+            scanProgress: 100,
+            scanResults: result.scanned_output ? result.scanned_output : null,
+            type: "general",
+          };
+        } else {
+          newMessage = {
+            ...botMessage,
+            isScanning: false,
+            scanProgress: 100,
+            scanResults: result.scanned_output,
+            type: "analyze",
+          };
         }
 
-        console.log('newMessage', newMessage)
+        console.log("newMessage", newMessage);
 
         // Final update
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.id === botMessage.id
-              ? { ...newMessage }
-              : msg
+            msg.id === botMessage.id ? { ...newMessage } : msg
           )
         );
 
         // Conversation meta
-        // setConversationId(result.conversation_id);
-        // setSelectedChatId(result.conversation_id);
-        // setChatHistory((prev) => [
-        //   ...prev,
-        //   {
-        //     user_id: user?.id || 0,
-        //     title: result.title || "New Chat",
-        //     id: result.conversation_id,
-        //     created_at: new Date().toISOString(),
-        //     updated_at: new Date().toISOString(),
-        //   },
-        // ]);
+        setConversationId(result.conversation_id);
+        setSelectedChatId(result.conversation_id);
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            user_id: user?.id || 0,
+            title: result.title || "New Chat",
+            id: result.conversation_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ]);
 
         return; // stop here
       }
@@ -396,48 +422,173 @@ const mockScanFetcher = async (urlToScan: string): Promise<Response> => {
   };
 
   // Sends a user message in an existing conversation
+  // Sends a user message in an existing conversation
   const sendMessage = async () => {
     try {
-      setIsTyping(true);
-      setIsRendering(true);
       const token = getToken();
-      const response = await fetch(
-        `${API_URL}/chat/conversation/${conversationId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ question: input }),
-          signal,
-        }
-      );
 
-      if (!response.body) throw new Error("ReadableStream not supported");
+      // --- classify first ---
+      const type = await classifyQuestion(input);
+      console.log("Classified type (sendMessage):", type);
 
+      // --- controller for abort ---
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      // --- choose correct API ---
+      let endpoint = "";
+      if (type === "general") {
+        endpoint = `${API_URL}/chat/conversation/${conversationId}`;
+      } else if (type === "analyze") {
+        endpoint = `${API_URL}/analyze/conversation/${conversationId}`;
+      } else {
+        endpoint = `${API_URL}/chat/conversation/${conversationId}`;
+      }
+
+      // --- initial bot message ---
       let botText = "";
+      let lastChunk: any = null;
+
       const botMessage: MessageType = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: "",
         datetime: new Date(),
         status: "info",
+        ...(type === "analyze" && {
+          isScanning: true,
+          scanProgress: 0,
+          type: "analyze",
+        }),
       };
 
       setMessages((prev) => [...prev, botMessage]);
 
-      console.log("convid", conversationId);
+      // ===================
+      // 🔍 HANDLE ANALYZE
+      // ===================
+      if (type === "analyze") {
+        console.log("Starting scan flow (sendMessage)");
+        let finished = false;
+        const startTime = Date.now();
+        const ESTIMATED_SCAN_TIME = 10000; // 10s baseline
+
+        // progress updater loop
+        const progressLoop = async () => {
+          while (!finished) {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(
+              Math.floor((elapsed / ESTIMATED_SCAN_TIME) * 100),
+              95
+            );
+
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === botMessage.id
+                  ? { ...msg, scanProgress: progress }
+                  : msg
+              )
+            );
+
+            await new Promise((r) => setTimeout(r, 300));
+          }
+
+          // ✅ final 100% update
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMessage.id ? { ...msg, scanProgress: 100 } : msg
+            )
+          );
+        };
+        progressLoop();
+
+        try {
+          // real API call
+          // const response = await fetch(endpoint, {
+          //   method: "POST",
+          //   headers: {
+          //     "Content-Type": "application/json",
+          //     Authorization: token ? `Bearer ${token}` : "",
+          //   },
+          //   body: JSON.stringify({ url: input }),
+          //   signal,
+          // });
+
+          const response = await mockScanFetcher(input);
+
+          if (!response.ok) throw new Error("Scan API error");
+
+          let result: any = null;
+          try {
+            result = await response.json();
+          } catch (err) {
+            console.error("Failed to parse scan JSON:", err);
+            result = { error: "Invalid scan response" };
+          }
+
+          console.log("Scan result (sendMessage):", result);
+
+          let newMessage: MessageType;
+          if (result.error) {
+            newMessage = {
+              ...botMessage,
+              isScanning: false,
+              scanProgress: 100,
+              scanResults: result.scanned_output || null,
+              type: "general",
+              content: result.error,
+            };
+          } else {
+            newMessage = {
+              ...botMessage,
+              isScanning: false,
+              scanProgress: 100,
+              scanResults: result.scanned_output,
+              type: "analyze",
+            };
+          }
+
+          // update with scan result
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMessage.id ? { ...newMessage } : msg
+            )
+          );
+        } finally {
+          finished = true; // ✅ ensure progress loop exits
+        }
+
+        return; // ✅ stop here for analyze
+      }
+
+      // ===================
+      // 💬 HANDLE GENERAL
+      // ===================
+      setIsTyping(true);
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ question: input }),
+        signal,
+      });
+
+      if (!response.body) throw new Error("ReadableStream not supported");
 
       await readStreamingJson(
         response,
         (parsed) => {
+          lastChunk = parsed;
           const content = parsed.message?.content || "";
-
-          const cleaned = content.replace("</think>", ""); // remove only closing tag to avoid cutting off
+          const cleaned = content.replace("</think>", "");
           botText += cleaned;
 
+          // mark rendering only once streaming begins
           setIsTyping(false);
+          setIsRendering(true);
 
           setMessages((prev) =>
             prev.map((msg) =>
