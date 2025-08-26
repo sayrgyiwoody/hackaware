@@ -56,7 +56,7 @@ function getStatusDisplay(status: string) {
 
 export default function FileScanResult({ analysisResult }: FileScanResultProps) {
   return (
-    <div className="space-y-4 mt-6">
+    <div className="space-y-4 mt-6 p-2">
       <h3 className="font-medium text-gray-200 flex items-center gap-2">
         <Shield className="h-5 w-5 text-cyan-500" />
         Analysis Results

@@ -191,7 +191,7 @@ What would you like to explore first?`,
 export const autoSuggestQueries = [
   "Scan facebook.com for security vulnerabilities",
   "Explain XSS attacks and prevention",
-  "Show me SQL injection demo",
+  "Explain Unit Testing.",
   "What are security headers?",
   "How does HTTPS work?",
   "Analyze privacy tracking on websites",
