@@ -298,6 +298,7 @@ export default function ChatPage() {
 
         // Progress updater loop
         const progressLoop = async () => {
+          const ESTIMATED_SCAN_TIME = 25000; // 25 seconds
           while (!finished) {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(
@@ -307,9 +308,9 @@ export default function ChatPage() {
 
             setMessages((prev) =>
               prev.map((msg) =>
-                msg.id === botMessage.id
-                  ? { ...msg, scanProgress: progress }
-                  : msg
+          msg.id === botMessage.id
+            ? { ...msg, scanProgress: progress }
+            : msg
               )
             );
 
@@ -361,7 +362,6 @@ export default function ChatPage() {
         setConversationId(result.conversation_id);
         setSelectedChatId(result.conversation_id);
         setChatHistory((prev) => [
-          ...prev,
           {
             user_id: user?.id || 0,
             title: result.title || "New Chat",
@@ -369,6 +369,7 @@ export default function ChatPage() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
+          ...prev
         ]);
 
         return; // stop here
@@ -407,7 +408,6 @@ export default function ChatPage() {
       setConversationId(conversation_id);
       setSelectedChatId(conversation_id);
       setChatHistory((prev) => [
-        ...prev,
         {
           user_id: user?.id || 0,
           title: conversation_title,
@@ -415,6 +415,7 @@ export default function ChatPage() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
+        ...prev
       ]);
     } catch (error: any) {
       console.error("Error creating chat:", error?.message || error);
