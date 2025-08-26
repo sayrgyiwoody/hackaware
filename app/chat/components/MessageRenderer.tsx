@@ -4,6 +4,7 @@ import { Progress } from "@radix-ui/react-progress";
 import { MessageType } from "../types";
 import { ScanResult } from "./ChatWindow/ScanResult";
 import ProgressBar from "./ChatWindow/ProgressBar";
+import FileScanResult from "./ChatWindow/FileScanResult";
 
 
 export default function MessageRenderer({ message, isRendering }: { message: MessageType; isRendering: boolean }) {
@@ -40,6 +41,9 @@ export default function MessageRenderer({ message, isRendering }: { message: Mes
   
   return (
     <div>
+
+      {message.type === "file" && <FileScanResult analysisResult={message.fileAnalysis} />}
+
       {message.type !== "analyze" &&
       <ChatMessage message={message} isRendering={isRendering} />
       }

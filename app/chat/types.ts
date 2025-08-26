@@ -14,4 +14,5 @@ export type MessageType = {
   codeExample?: any;
   securityTip?: any;
   type?: any;
+  fileAnalysis?: any;
 };

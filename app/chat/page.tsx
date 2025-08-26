@@ -632,17 +632,22 @@ export default function ChatPage() {
   };
 
   // Handles user message submission
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  const handleSendMessage = async (url = null) => {
+    if (!input.trim() && !url) return;
 
     setShowSuggestions(false);
     stopRef.current = false;
+
+    // If URL is provided, set it as input
+    if (url) {
+      setInput(url);
+    }
 
     // Add user message to chat
     const userMessage: MessageType = {
       id: Date.now().toString(),
       role: "user",
-      content: input,
+      content: url || input,
       datetime: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -813,6 +818,7 @@ export default function ChatPage() {
             scanUrl={handleSendMessage}
             showAnalysisModal={showAnalysisModal}
             setShowAnalysisModal={setShowAnalysisModal}
+            setMessages={setMessages}
           />
         </main>
       </div>
