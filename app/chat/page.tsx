@@ -195,7 +195,7 @@ export default function ChatPage() {
     });
   };
 
-  // --- Step 1: mock Gemini classification fetcher ---
+  // --- mock Gemini classification fetcher ---
   // const classifyQuestion = async (question: string): Promise<string> => {
   //   // Mock API call to Gemini (replace with real later)
   //   // This is just a fake classifier to simulate Gemini response
@@ -289,9 +289,12 @@ export default function ChatPage() {
       const controller = new AbortController();
       const { signal } = controller;
 
+      const url = extractUrlFromMessage(input);
+      console.log('url to scan:', url);
+
       const responsePromise =
         type === "analyze"
-          ? callApiByType(type, extractUrlFromMessage(input), token, signal)
+          ? callApiByType(type, url, token, signal)
           : callApiByType(type, input, token, signal);
 
       // Initial bot message
@@ -315,6 +318,7 @@ export default function ChatPage() {
 
       if (type === "analyze") {
         console.log("Starting scan flow");
+        setIsUrlScanning(true);
         let finished = false;
         const startTime = Date.now();
         const ESTIMATED_SCAN_TIME = 10000; // 10s baseline
@@ -502,6 +506,7 @@ export default function ChatPage() {
       // ===================
       if (type === "analyze") {
         console.log("Starting scan flow (sendMessage)");
+        setIsUrlScanning(true);
         let finished = false;
         const startTime = Date.now();
         const ESTIMATED_SCAN_TIME = 10000; // 10s baseline
@@ -632,22 +637,17 @@ export default function ChatPage() {
   };
 
   // Handles user message submission
-  const handleSendMessage = async (url = null) => {
-    if (!input.trim() && !url) return;
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
 
     setShowSuggestions(false);
     stopRef.current = false;
-
-    // If URL is provided, set it as input
-    if (url) {
-      setInput(url);
-    }
 
     // Add user message to chat
     const userMessage: MessageType = {
       id: Date.now().toString(),
       role: "user",
-      content: url || input,
+      content: input,
       datetime: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -663,6 +663,137 @@ export default function ChatPage() {
 
     setIsTyping(false);
     setIsRendering(false);
+    setIsUrlScanning(false);
+  };
+
+  const handleUrlScan = async (url: string) => {
+    try {
+      const token = getToken();
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      // ✅ Assign controller to stopRef so Stop button works
+      stopRef.current = () => {
+        controller.abort(); // stop fetch
+        finished = true; // stop progress loop
+        setIsUrlScanning(false); // reset state
+      };
+
+      // ✅ Decide endpoint based on whether conversation exists
+      let endpoint = "";
+      if (!conversationId) {
+        endpoint = `${API_URL}/analyze/new`;
+      } else {
+        endpoint = `${API_URL}/analyze/conversation/${conversationId}`;
+      }
+
+      // Initial scanning message
+      const botMessage: MessageType = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "",
+        datetime: new Date(),
+        isScanning: true,
+        scanProgress: 0,
+        type: "analyze",
+      };
+      setMessages((prev) => [...prev, botMessage]);
+
+      setIsUrlScanning(true);
+
+      // Progress loop simulation
+      let finished = false;
+      const startTime = Date.now();
+
+      const progressLoop = async () => {
+        const ESTIMATED_SCAN_TIME = 25000; // 25s baseline
+        while (!finished) {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(
+            Math.floor((elapsed / ESTIMATED_SCAN_TIME) * 100),
+            95
+          );
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMessage.id
+                ? { ...msg, scanProgress: progress }
+                : msg
+            )
+          );
+
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      };
+
+      progressLoop();
+
+      // === Fetch request ===
+      const inputUrl = extractUrlFromMessage(url);
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ url: inputUrl }),
+        signal,
+      });
+
+      finished = true;
+      setIsUrlScanning(false);
+
+      if (!response.ok) throw new Error("Scan API error");
+      const result = await response.json();
+
+      let newMessage: MessageType;
+      if (result.error) {
+        newMessage = {
+          ...botMessage,
+          isScanning: false,
+          scanProgress: 100,
+          content: result.error,
+          scanResults: result.scanned_output ? result.scanned_output : null,
+          type: "general",
+        };
+      } else {
+        newMessage = {
+          ...botMessage,
+          isScanning: false,
+          scanProgress: 100,
+          scanResults: result.scanned_output,
+          type: "analyze",
+        };
+      }
+
+      // Update scanning message
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === botMessage.id ? { ...newMessage } : msg))
+      );
+
+      // ✅ If it was a new conversation, save meta
+      if (!conversationId && result.conversation_id) {
+        setConversationId(result.conversation_id);
+        setSelectedChatId(result.conversation_id);
+        setChatHistory((prev) => [
+          {
+            user_id: user?.id || 0,
+            title: result.title || "New Scan",
+            id: result.conversation_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+      }
+    } catch (error: any) {
+      console.error("Error scanning URL:", error?.message || error);
+      setIsUrlScanning(false);
+    } finally {
+      // ✅ Cleanup stopRef when done
+      stopRef.current = false;
+      setIsUrlScanning(false);
+    }
   };
 
   //stop fetching tokens from text generation API
@@ -815,7 +946,7 @@ export default function ChatPage() {
             urlToScan={urlToScan}
             setUrlToScan={setUrlToScan}
             isUrlScanning={isUrlScanning}
-            scanUrl={handleSendMessage}
+            scanUrl={handleUrlScan}
             showAnalysisModal={showAnalysisModal}
             setShowAnalysisModal={setShowAnalysisModal}
             setMessages={setMessages}

@@ -50,7 +50,7 @@ interface InputTabsProps {
   urlToScan: string;
   setUrlToScan: (val: string) => void;
   isUrlScanning: boolean;
-  scanUrl: (url?:null) => void;
+  scanUrl: (url:string) => void;
   showAnalysisModal: boolean;
   setShowAnalysisModal: (val: boolean) => void;
   setMessages: (msgs: any) => void;

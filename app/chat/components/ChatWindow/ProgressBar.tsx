@@ -111,7 +111,7 @@ export default function ProgressBar({
             </div>
           )}
 
-          {(message.scanProgress || 0) > 95 && (
+          {(message.scanProgress || 0) >= 95 && (
             <div className="flex items-center gap-3 text-xs animate-fade-in">
               <div className="w-5 h-5 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 flex items-center justify-center animate-spin">
                 <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
