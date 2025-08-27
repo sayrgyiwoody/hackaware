@@ -874,7 +874,7 @@ export default function ChatPage() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleConfirmLogin}>Go to Login</Button>
+              <Button className="mb-2 md:mb-0" onClick={handleConfirmLogin}>Go to Login</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
