@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Shield } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Shield } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -13,8 +13,10 @@ export function HeroSection() {
           for Website Security
         </h1>
         <p className="text-xl text-gray-300 mb-8 max-w-lg">
-          Experience website security through conversational interactions with HackAware. Our AI assistant scans for
-          privacy risks and security vulnerabilities while you chat. Perfect for Myanmar's growing digital ecosystem.
+          Experience website security through conversational interactions with
+          HackAware. Our AI assistant scans for privacy risks and security
+          vulnerabilities while you chat. Perfect for Myanmar's growing digital
+          ecosystem.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button
@@ -47,25 +49,28 @@ export function HeroSection() {
             <div className="space-y-4">
               <div className="bg-gray-700/50 rounded-lg p-4">
                 <p className="text-white">
-                  Hello! I'm HackAware, your AI website security assistant. Type any website URL in our chat, and I'll
-                  scan it for privacy risks and security vulnerabilities.
+                  Hi! I'm HackAware, your AI security assistant. I scan websites
+                  and files for risks and explain them simply.
                 </p>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4 flex items-start gap-2">
                 <div className="min-w-fit mt-1">🔍</div>
                 <p>
-                  Just type a website URL, and I'll check for third-party trackers, missing security headers, and
-                  privacy concerns.
+                  Enter a URL to check for trackers, weak headers, and common
+                  threats.
                 </p>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4 flex items-start gap-2">
-                <div className="min-w-fit mt-1">📚</div>
-                <p>I'll explain everything in simple terms and teach you how to fix any issues I find.</p>
+                <div className="min-w-fit mt-1">📂</div>
+                <p>
+                  Upload a file and I'll scan it for hidden risks or unsafe
+                  data.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

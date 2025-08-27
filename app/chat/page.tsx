@@ -609,9 +609,12 @@ export default function ChatPage() {
 
       if (!response.body) throw new Error("ReadableStream not supported");
 
+      console.log("Response body:", response.body);
+
       await readStreamingJson(
         response,
         (parsed) => {
+          console.log("Streaming response:", parsed);
           lastChunk = parsed;
           const content = parsed.message?.content || "";
           const cleaned = content.replace("</think>", "");
