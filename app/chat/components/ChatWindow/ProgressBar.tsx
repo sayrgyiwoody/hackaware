@@ -20,7 +20,7 @@ export default function ProgressBar({
             </span>
           </div>
           <div className="px-3 py-1 bg-gray-700/50 rounded-full text-xs font-mono text-cyan-400 border border-cyan-500/30">
-            {message.scanProgress}%
+            {message.scanProgress === 95 ? "Almost done" : `${message.scanProgress}%`}
           </div>
         </div>
 
