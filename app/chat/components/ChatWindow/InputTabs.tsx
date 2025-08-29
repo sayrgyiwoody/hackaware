@@ -196,7 +196,7 @@ export default function InputTabs({
         <TabsList className="mb-4">
           <TabsTrigger value="text">General Chat</TabsTrigger>
           <TabsTrigger value="url">URL Scan</TabsTrigger>
-          <TabsTrigger value="upload">File Upload</TabsTrigger>
+          <TabsTrigger value="upload">File Scan</TabsTrigger>
         </TabsList>
 
         {/* GENERAL CHAT */}

@@ -10,7 +10,7 @@ export function HeroSection() {
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">
             AI Chat Assistant
           </span>{" "}
-          for Website Security
+          for Cybersecurity
         </h1>
         <p className="text-xl text-gray-300 mb-8 max-w-lg">
           Experience website security through conversational interactions with
@@ -47,24 +47,30 @@ export function HeroSection() {
               <h3 className="text-xl font-bold">HackAware</h3>
             </div>
             <div className="space-y-4">
-              <div className="bg-gray-700/50 rounded-lg p-4">
-                <p className="text-white">
-                  Hi! I'm HackAware, your AI security assistant. I scan websites
-                  and files for risks and explain them simply.
-                </p>
-              </div>
+              {/* Scan */}
               <div className="bg-gray-700/50 rounded-lg p-4 flex items-start gap-2">
                 <div className="min-w-fit mt-1">🔍</div>
                 <p>
-                  Enter a URL to check for trackers, weak headers, and common
-                  threats.
+                  <strong>Scan:</strong> Enter a URL or upload a file to check
+                  for threats, trackers, weak headers, or unsafe data.
                 </p>
               </div>
+
+              {/* Secure */}
               <div className="bg-gray-700/50 rounded-lg p-4 flex items-start gap-2">
-                <div className="min-w-fit mt-1">📂</div>
+                <div className="min-w-fit mt-1">🛡️</div>
                 <p>
-                  Upload a file and I'll scan it for hidden risks or unsafe
-                  data.
+                  <strong>Secure:</strong> Get actionable advice to fix
+                  vulnerabilities and protect your privacy.
+                </p>
+              </div>
+
+              {/* Learn */}
+              <div className="bg-gray-700/50 rounded-lg p-4 flex items-start gap-2">
+                <div className="min-w-fit mt-1">📚</div>
+                <p>
+                  <strong>Learn:</strong> Understand the risks and how to stay
+                  safe online with easy-to-follow explanations.
                 </p>
               </div>
             </div>

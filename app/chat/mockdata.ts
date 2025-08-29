@@ -190,6 +190,7 @@ What would you like to explore first?`,
 
 export const autoSuggestQueries = [
   "Scan facebook.com",
+  "Suggest me cybersecurity topics based on my knowledge level",
   "Explain XSS attacks and prevention",
   "Explain Unit Testing.",
   "What are security headers?",
